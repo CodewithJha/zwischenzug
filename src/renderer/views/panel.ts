@@ -1,5 +1,6 @@
 import type { AppSnapshot, GameLogEntry } from '../../shared/types';
 import { h, zz, type View } from '../dom';
+import { apiKeyForm } from './api-key';
 
 const REASON_LABEL = { biometric: 'pulse settled', timer: 'timer', override: 'skipped' } as const;
 
@@ -26,11 +27,6 @@ export function panelView(): View {
   const status = h('div', { class: 'status' });
   const message = h('p', { class: 'muted', role: 'status' });
   const logList = h('ol', { class: 'log' });
-  const keyInput = h('input', {
-    type: 'password',
-    placeholder: 'Presage API key',
-    autocomplete: 'off',
-  });
   let deleteArmed = false;
   const deleteBtn = h('button', { class: 'danger' }, 'Delete all my data');
 
@@ -51,13 +47,6 @@ export function panelView(): View {
     message.textContent = res.ok ? 'All local data deleted.' : res.error;
   });
 
-  const saveKey = async (e: Event): Promise<void> => {
-    e.preventDefault();
-    const res = await zz().setPresageKey(keyInput.value);
-    keyInput.value = '';
-    message.textContent = res.ok ? 'API key saved to the OS keychain.' : res.error;
-  };
-
   const el = h(
     'aside',
     { class: 'panel' },
@@ -71,13 +60,7 @@ export function panelView(): View {
     h('h2', {}, 'Game log'),
     logList,
     h('h2', {}, 'Settings'),
-    h(
-      'form',
-      { onsubmit: (e) => void saveKey(e) },
-      h('label', {}, 'Presage API key (stored encrypted; or set PRESAGE_API_KEY)'),
-      keyInput,
-      h('button', { type: 'submit' }, 'Save key'),
-    ),
+    apiKeyForm(),
     deleteBtn,
     message,
   );

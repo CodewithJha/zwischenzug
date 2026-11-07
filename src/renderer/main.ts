@@ -1,25 +1,39 @@
 import type { AppSnapshot, Screen } from '../shared/types';
-import { h, staticView, zz, type View } from './dom';
+import { PresageProvider } from './biometrics/presage';
+import { zz, type View } from './dom';
+import { calibrationView } from './views/calibration';
 import { consentView } from './views/consent';
 import { cooldownView } from './views/cooldown';
 import { panelView } from './views/panel';
+import { pulseMonitor } from './views/pulse-monitor';
 import { setupView } from './views/setup';
 
-const VIEWS: Record<Screen, () => View> = {
+let latest: AppSnapshot | null = null;
+// The camera is only opened by the calibration and cooldown screens, and released when
+// they are torn down (screen change), so it is never on during a game.
+const provider = new PresageProvider(() => latest);
+
+const VIEWS: Record<Screen, (s: AppSnapshot) => View> = {
   consent: consentView,
   setup: setupView,
-  calibration: () => staticView(h('section', { class: 'screen' }, 'Calibration (coming in M5)')),
+  calibration: () => calibrationView(provider),
   playing: panelView,
-  cooldown: () => cooldownView(null),
+  cooldown: (s) =>
+    cooldownView(
+      s.profile.consent?.mode === 'camera' && s.cooldown?.baselineBpm != null
+        ? pulseMonitor(provider)
+        : null,
+    ),
 };
 
 const root = document.getElementById('app') as HTMLElement;
 let current: { screen: Screen; view: View } | null = null;
 
 function render(s: AppSnapshot): void {
+  latest = s;
   if (current?.screen !== s.screen) {
     current?.view.destroy();
-    const view = VIEWS[s.screen]();
+    const view = VIEWS[s.screen](s);
     current = { screen: s.screen, view };
     document.body.dataset.screen = s.screen;
     root.replaceChildren(view.el);

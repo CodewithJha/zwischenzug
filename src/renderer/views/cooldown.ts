@@ -3,9 +3,9 @@ import { formatSec, h, zz, type View } from '../dom';
 
 /**
  * Full-window lock screen after a loss. Main owns the decision; this view only shows the
- * numbers and offers the override. `pulseSlot` is filled by the camera monitor when enabled.
+ * numbers and offers the override. `monitor` is the live pulse panel in camera mode.
  */
-export function cooldownView(pulseSlot: HTMLElement | null): View {
+export function cooldownView(monitor: View | null): View {
   const rule = h('p', { class: 'rule' });
   const progress = h('div', { class: 'progress' });
   const suggestion = h('p', { class: 'suggestion' });
@@ -30,7 +30,7 @@ export function cooldownView(pulseSlot: HTMLElement | null): View {
       h('div', { class: 'breathe-circle', 'aria-hidden': 'true' }),
       h('p', {}, 'Breathe in slowly for 4, out for 6.'),
     ),
-    pulseSlot,
+    monitor?.el,
     rule,
     progress,
     suggestion,
@@ -52,6 +52,7 @@ export function cooldownView(pulseSlot: HTMLElement | null): View {
   return {
     el,
     update(s: AppSnapshot) {
+      monitor?.update(s);
       const c = s.cooldown;
       if (!c) return;
       sentenceLabel.textContent = `Type: "${s.settings.overrideSentence}"`;
@@ -81,6 +82,6 @@ export function cooldownView(pulseSlot: HTMLElement | null): View {
             `until ${new Date(c.suggestedPauseUntil).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.`
           : '';
     },
-    destroy: () => undefined,
+    destroy: () => monitor?.destroy(),
   };
 }

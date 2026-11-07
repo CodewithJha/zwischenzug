@@ -8,6 +8,7 @@ import { installRequestLock } from './lichess/lock';
 import { LichessGameSource } from './lichess/source';
 import { createLichessView } from './lichess/view';
 import { logger } from './log';
+import { initPresage, type PresageStatus } from './presage';
 import { getPresageKey } from './secrets';
 import { Session } from './session';
 import { runSmokeIfRequested } from './smoke';
@@ -23,6 +24,7 @@ if (process.env.ZZ_USER_DATA_DIR) app.setPath('userData', process.env.ZZ_USER_DA
 app.whenReady().then(() => {
   const config = loadConfig();
   const dataDir = app.getPath('userData');
+  let presage: PresageStatus = { sdkLoaded: false, sdkError: 'loading...' };
   const session = new Session({
     config,
     stateFile: new JsonFile(
@@ -34,12 +36,16 @@ app.whenReady().then(() => {
       version: 1 as const,
       games: [],
     })),
-    presageStatus: () => ({ sdkLoaded: false, sdkError: 'Presage integration not wired yet' }),
+    presageStatus: () => presage,
     hasApiKey: () => getPresageKey() !== null,
   });
   registerIpc(session, config);
 
   const win = createAppWindow(() => session.cameraAllowed);
+  void initPresage(win).then((status) => {
+    presage = status;
+    session.notify();
+  });
   const view = createLichessView(win, config.lichess.origin);
   installRequestLock(view.webContents.session, () => session.locked);
 

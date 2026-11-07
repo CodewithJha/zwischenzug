@@ -50,6 +50,11 @@ export class Session {
     return () => this.listeners.delete(listener);
   }
 
+  /** Re-publish the snapshot after an external change (e.g. API key saved, SDK loaded). */
+  notify(): void {
+    this.emit();
+  }
+
   private emit(): void {
     for (const l of this.listeners) l();
   }

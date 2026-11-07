@@ -77,6 +77,7 @@ export function registerIpc(session: Session, config: Config): void {
     (key): Result => {
       try {
         savePresageKey(str(key));
+        session.notify();
         return { ok: true };
       } catch (err) {
         return { ok: false, error: err instanceof Error ? err.message : String(err) };

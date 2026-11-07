@@ -190,6 +190,36 @@ label {
   }
 }
 
+.monitor {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  margin: 20px 0;
+}
+
+.preview {
+  width: 240px;
+  height: 135px;
+  border-radius: 8px;
+  background: #0b0c10;
+  object-fit: cover;
+  transform: scaleX(-1);
+}
+
+.bpm {
+  font-size: 40px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.hint.ok {
+  color: var(--accent);
+}
+
+.hint.warn {
+  color: var(--warn);
+}
+
 .override {
   margin-top: 32px;
   color: var(--muted);
