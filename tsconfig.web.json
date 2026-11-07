@@ -4,5 +4,5 @@
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "types": []
   },
-  "include": ["src/renderer", "src/core", "src/shared"]
+  "include": ["src/renderer", "src/core", "src/shared", "tests/renderer"]
 }

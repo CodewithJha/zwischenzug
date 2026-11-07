@@ -12,5 +12,6 @@
     "tests",
     "scripts",
     "vitest.config.mts"
-  ]
+  ],
+  "exclude": ["tests/renderer"]
 }
