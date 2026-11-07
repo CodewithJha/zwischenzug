@@ -1,0 +1,84 @@
+{
+  "name": "zwischenzug",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Privacy-first chess tilt cooldown: after a Lichess loss, your next game unlocks when your pulse is back near baseline.",
+  "license": "MIT",
+  "main": "dist/main/index.js",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "dev": "node scripts/build.mjs && electron .",
+    "start": "electron .",
+    "typecheck": "tsc -p tsconfig.node.json --noEmit && tsc -p tsconfig.web.json --noEmit",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check": "npm run typecheck && npm run lint && npm run format:check && npm test",
+    "dist:mac": "npm run build && electron-builder --mac --arm64",
+    "dist:dir": "npm run build && electron-builder --dir"
+  },
+  "dependencies": {
+    "@smartspectra/node-sdk": "3.4.0",
+    "electron-log": "^5.4.4"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^24.0.0",
+    "electron": "43.2.0",
+    "electron-builder": "^26.6.0",
+    "esbuild": "^0.28.2",
+    "eslint": "^10.0.0",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.0.0",
+    "prettier": "^3.6.0",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.72.1",
+    "vitest": "^5.1.0"
+  },
+  "build": {
+    "appId": "dev.zwischenzug.app",
+    "productName": "Zwischenzug",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**",
+      "package.json",
+      "node_modules/**",
+      "!node_modules/@smartspectra/node-sdk-*/**",
+      "!node_modules/@smartspectra/node-sdk/scripts/**",
+      "!node_modules/@smartspectra/node-sdk/test/**",
+      "!node_modules/@smartspectra/node-sdk/samples/**",
+      "!node_modules/@smartspectra/node-sdk/prebuilds/**"
+    ],
+    "mac": {
+      "category": "public.app-category.games",
+      "target": "dmg",
+      "hardenedRuntime": true,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
+      "extendInfo": {
+        "NSCameraUsageDescription": "Zwischenzug reads your pulse from the camera only between games, after you consent. Video never leaves your device."
+      },
+      "extraResources": [
+        {
+          "from": "node_modules/@smartspectra/node-sdk-darwin-${arch}/",
+          "to": "smartspectra"
+        }
+      ]
+    },
+    "asar": true
+  },
+  "allowScripts": {
+    "electron@43.2.0": true,
+    "esbuild@0.28.2": true,
+    "koffi@2.16.3": true,
+    "protobufjs@7.6.6": true,
+    "electron-winstaller": false
+  }
+}
