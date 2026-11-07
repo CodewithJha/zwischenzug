@@ -36,6 +36,15 @@ const ERRORS: Partial<Record<number, string>> = {
   [SmartSpectraErrorCode.kProcessingFailed]: 'Presage processing could not start.',
 };
 
+/** getUserMedia DOMException names, wrapped by the SDK as `err.cause`. */
+const CAMERA_ERRORS: Partial<Record<string, string>> = {
+  NotReadableError: 'The camera is in use by another app.',
+  NotFoundError: 'No camera found.',
+  OverconstrainedError: 'No suitable camera found.',
+  NotAllowedError:
+    'Camera access is off. Allow it in System Settings > Privacy & Security > Camera.',
+};
+
 const nameOf = (table: Record<string, number>, code: number): string =>
   Object.keys(table).find((k) => table[k] === code) ?? String(code);
 
@@ -154,10 +163,12 @@ export class PresageProvider implements BiometricProvider {
       await started;
       trace('SDK session running');
     } catch (err) {
-      const code = (err as { code?: unknown }).code;
+      const { code, cause } = err as { code?: unknown; cause?: { name?: unknown } };
       zz().log('warn', `SmartSpectra start failed: ${String(err)}`);
+      trace(`start failed: ${String(err)}`);
       unavailable(
         (typeof code === 'number' && ERRORS[code]) ||
+          (typeof cause?.name === 'string' && CAMERA_ERRORS[cause.name]) ||
           `Could not start the camera measurement (${err instanceof Error ? err.message : String(err)}).`,
       );
     }

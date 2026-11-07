@@ -21,6 +21,8 @@ const PANEL_WIDTH = 380;
 
 app.enableSandbox();
 if (process.env.ZZ_USER_DATA_DIR) app.setPath('userData', process.env.ZZ_USER_DATA_DIR);
+// One instance per data folder: two would race on state.json and both watch Lichess.
+if (!app.requestSingleInstanceLock()) app.exit(0);
 
 app.whenReady().then(() => {
   const config = loadConfig();
@@ -53,6 +55,10 @@ app.whenReady().then(() => {
   }));
 
   const win = createAppWindow(() => session.cameraAllowed);
+  app.on('second-instance', () => {
+    if (win.isMinimized()) win.restore();
+    win.focus();
+  });
   void initPresage(win).then((status) => {
     presage = status;
     session.notify();

@@ -46,3 +46,4 @@ function render(s: AppSnapshot): void {
 zz().onSnapshot(render);
 void zz().getSnapshot().then(render);
 window.addEventListener('error', (e) => zz().log('error', String(e.message)));
+window.addEventListener('unhandledrejection', (e) => zz().log('error', String(e.reason)));

@@ -57,7 +57,8 @@ export function cooldownView(monitor: View | null): View {
       if (!c) return;
       sentenceLabel.textContent = `Type: "${s.settings.overrideSentence}"`;
       const wait = c.minWaitRemainingSec;
-      if (c.baselineBpm === null) {
+      const pulsePossible = s.presage.sdkLoaded && s.presage.apiKeyConfigured;
+      if (c.baselineBpm === null || !pulsePossible) {
         rule.textContent = `Unlocks by timer in ${formatSec(c.fallbackRemainingSec)}.`;
       } else {
         rule.textContent =
@@ -66,7 +67,7 @@ export function cooldownView(monitor: View | null): View {
       }
       const lines: string[] = [];
       if (wait > 0) lines.push(`Minimum pause: ${formatSec(wait)} left`);
-      if (c.baselineBpm !== null) {
+      if (c.baselineBpm !== null && pulsePossible) {
         lines.push(
           c.signalFresh
             ? `Settled for ${Math.min(c.settledForSec, c.sustainSec)} / ${c.sustainSec} s`
