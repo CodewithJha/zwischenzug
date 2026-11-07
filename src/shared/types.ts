@@ -24,6 +24,8 @@ export interface GameLogEntry {
   outcome: Outcome;
   userColor: Color;
   speed: string | null;
+  /** Losses in a row after this game (0 after a win or draw). Missing in older logs. */
+  consecutiveLosses?: number;
   /** Present only for losses that started a cooldown. */
   cooldown: {
     baselineBpm: number | null;

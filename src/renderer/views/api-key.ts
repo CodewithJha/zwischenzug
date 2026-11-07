@@ -5,6 +5,7 @@ export function apiKeyForm(): HTMLElement {
   const input = h('input', {
     type: 'password',
     placeholder: 'Presage API key',
+    'aria-label': 'Presage API key',
     autocomplete: 'off',
   });
   const message = h('p', { class: 'muted', role: 'status' });

@@ -1,4 +1,13 @@
-import { ipcMain, systemPreferences, type IpcMainEvent, type IpcMainInvokeEvent } from 'electron';
+import {
+  app,
+  dialog,
+  ipcMain,
+  systemPreferences,
+  type IpcMainEvent,
+  type IpcMainInvokeEvent,
+} from 'electron';
+import { writeFileSync } from 'node:fs';
+import path from 'node:path';
 import { IPC, type Result } from '../shared/ipc';
 import type { Config } from '../core/config';
 import type { DiagnosticsInfo, PresageRendererConfig } from '../shared/types';
@@ -60,6 +69,24 @@ export function registerIpc(
   handle(IPC.deleteAll, () => session.deleteAll(), denied);
   handle(IPC.setDiagnostics, (open) => session.setDiagnostics(open === true), denied);
   handle(IPC.getDiagnostics, () => diagnostics(), null);
+  handle(
+    IPC.exportLog,
+    async (format): Promise<Result> => {
+      const ext = format === 'json' ? 'json' : 'csv';
+      const { canceled, filePath } = await dialog.showSaveDialog({
+        defaultPath: path.join(app.getPath('documents'), `zwischenzug-games.${ext}`),
+        filters: [{ name: ext.toUpperCase(), extensions: [ext] }],
+      });
+      if (canceled || !filePath) return { ok: false, error: 'Export cancelled.' };
+      try {
+        writeFileSync(filePath, session.exportLog(ext));
+        return { ok: true };
+      } catch (err) {
+        return { ok: false, error: `Could not save: ${String(err)}` };
+      }
+    },
+    denied,
+  );
 
   handle(
     IPC.requestCamera,

@@ -7,9 +7,12 @@ const REASON_LABEL = { biometric: 'pulse settled', timer: 'timer', override: 'sk
 function logRow(g: GameLogEntry): HTMLElement {
   const when = new Date(g.endedAt).toLocaleString();
   const c = g.cooldown;
+  const pulse =
+    c?.baselineBpm != null
+      ? `baseline ${c.baselineBpm} · after loss ${c.pulseAtLossBpm ?? '–'} bpm · `
+      : '';
   const detail = c
-    ? `baseline ${c.baselineBpm ?? '–'} · after loss ${c.pulseAtLossBpm ?? '–'} bpm · ` +
-      `unlocked after ${c.timeToUnlockSec}s (${REASON_LABEL[c.unlockReason]})`
+    ? `${pulse}unlocked after ${c.timeToUnlockSec}s (${REASON_LABEL[c.unlockReason]})`
     : g.outcome === 'loss'
       ? 'cooldown in progress'
       : '';
@@ -18,6 +21,7 @@ function logRow(g: GameLogEntry): HTMLElement {
     { class: `log-${g.outcome}` },
     h('strong', {}, g.outcome),
     ` · ${g.speed ?? ''} · ${when}`,
+    g.outcome === 'loss' && g.consecutiveLosses ? ` · ${g.consecutiveLosses} in a row` : null,
     detail ? h('div', { class: 'muted' }, detail) : null,
   );
 }
@@ -47,6 +51,11 @@ export function panelView(): View {
     message.textContent = res.ok ? 'All local data deleted.' : res.error;
   });
 
+  const exportLog = async (format: 'csv' | 'json'): Promise<void> => {
+    const res = await zz().exportLog(format);
+    message.textContent = res.ok ? 'Game log exported.' : res.error;
+  };
+
   const el = h(
     'aside',
     { class: 'panel' },
@@ -60,6 +69,12 @@ export function panelView(): View {
     ),
     h('h2', {}, 'Game log'),
     logList,
+    h(
+      'div',
+      { class: 'actions' },
+      h('button', { onclick: () => void exportLog('csv') }, 'Export CSV'),
+      h('button', { onclick: () => void exportLog('json') }, 'Export JSON'),
+    ),
     h('h2', {}, 'Settings'),
     apiKeyForm(),
     deleteBtn,

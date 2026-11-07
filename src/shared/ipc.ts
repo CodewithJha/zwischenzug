@@ -23,6 +23,7 @@ export const IPC = {
   deleteAll: 'zz:delete-all',
   setDiagnostics: 'zz:set-diagnostics',
   getDiagnostics: 'zz:get-diagnostics',
+  exportLog: 'zz:export-log',
   log: 'zz:log',
 } as const;
 
@@ -49,5 +50,7 @@ export interface ZzApi {
   /** Opens or closes the SDK diagnostics screen (never during a cooldown). */
   setDiagnostics(open: boolean): Promise<Result>;
   getDiagnostics(): Promise<DiagnosticsInfo>;
+  /** Saves the game log via a save dialog. */
+  exportLog(format: 'csv' | 'json'): Promise<Result>;
   log(level: 'info' | 'warn' | 'error', message: string): void;
 }

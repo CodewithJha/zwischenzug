@@ -37,7 +37,7 @@ export function consentView(): View {
         h(
           'li',
           {},
-          'The SDK contacts Presage only to validate the API key. SDK telemetry is turned off.',
+          'The SDK contacts Presage to check the API key and usage, never with video. SDK telemetry is turned off.',
         ),
         h(
           'li',

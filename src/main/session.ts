@@ -7,6 +7,7 @@ import {
   type EngineEvent,
   type Unlock,
 } from '../core/cooldown';
+import { logToCsv } from '../core/export';
 import { freshState, type PersistedLog, type PersistedState } from '../core/persisted';
 import type { Result } from '../shared/ipc';
 import type { AppSnapshot, CameraMode, FinishedGame, GameLogEntry, Screen } from '../shared/types';
@@ -167,8 +168,8 @@ export class Session {
   gameFinished(game: FinishedGame): void {
     if (this.games.some((g) => g.gameId === game.gameId)) return;
     logger.info(`game ${game.gameId} finished: ${game.outcome}`);
-    this.games.push({ ...game, cooldown: null });
-    this.deps.logFile.write({ version: 1, games: this.games });
+    const entry: GameLogEntry = { ...game, cooldown: null };
+    this.games.push(entry);
     this.apply({
       type: 'GAME_FINISHED',
       gameId: game.gameId,
@@ -176,6 +177,8 @@ export class Session {
       baselineBpm: this.cameraAllowed ? (this.state.profile.baseline?.bpm ?? null) : null,
       at: this.now(),
     });
+    entry.consecutiveLosses = this.state.engine.consecutiveLosses;
+    this.deps.logFile.write({ version: 1, games: this.games });
   }
 
   pulse(bpm: number, stable: boolean): void {
@@ -198,6 +201,13 @@ export class Session {
 
   getLog(): GameLogEntry[] {
     return [...this.games].reverse();
+  }
+
+  /** The log oldest first, as a file the user chose to save. */
+  exportLog(format: 'csv' | 'json'): string {
+    return format === 'csv'
+      ? logToCsv(this.games)
+      : JSON.stringify({ version: 1, games: this.games }, null, 2);
   }
 
   deleteAll(): Result {
