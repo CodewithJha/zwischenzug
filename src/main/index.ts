@@ -1,5 +1,6 @@
-import { app } from 'electron';
+import { app, powerMonitor } from 'electron';
 import path from 'node:path';
+import { steadyClock } from '../core/clock';
 import { IPC } from '../shared/ipc';
 import { freshState, parseLog, parseState } from '../core/persisted';
 import { loadConfig } from './config';
@@ -24,12 +25,15 @@ if (process.env.ZZ_USER_DATA_DIR) app.setPath('userData', process.env.ZZ_USER_DA
 app.whenReady().then(() => {
   const config = loadConfig();
   const dataDir = app.getPath('userData');
+  const clock = steadyClock(Date.now, () => performance.now());
+  powerMonitor.on('resume', clock.resync);
   let presage: PresageStatus = { sdkLoaded: false, sdkError: 'loading...', sdkVersion: null };
   const session = new Session({
     config,
+    now: clock.now,
     stateFile: new JsonFile(
       path.join(dataDir, 'state.json'),
-      (raw) => parseState(raw, Date.now()),
+      (raw) => parseState(raw, clock.now()),
       freshState,
     ),
     logFile: new JsonFile(path.join(dataDir, 'games.json'), parseLog, () => ({
@@ -77,6 +81,8 @@ app.whenReady().then(() => {
     const [width, height] = win.getContentSize() as [number, number];
     view.setBounds({ x: 0, y: 0, width: Math.max(0, width - PANEL_WIDTH), height });
     view.setVisible(showLichess);
+    // A hidden view can keep keyboard focus; move it so keys cannot reach Lichess.
+    if (!showLichess && view.webContents.isFocused()) win.webContents.focus();
     if (!win.webContents.isLoading()) win.webContents.send(IPC.snapshot, session.snapshot());
   };
   session.onChange(syncGameSource);

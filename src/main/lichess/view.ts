@@ -26,6 +26,8 @@ export function createLichessView(win: BrowserWindow, startUrl: string): WebCont
       nodeIntegration: false,
       webviewTag: false,
       safeDialogs: true,
+      // A DevTools window opened while playing would stay usable during a cooldown.
+      devTools: false,
     },
   });
   const wc = view.webContents;

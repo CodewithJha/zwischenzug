@@ -69,11 +69,17 @@ export function parseEngine(raw: unknown, now: number): EngineState {
     firstBpm: null,
     suggestedPauseUntil: null,
   };
-  // A pre-restart signal is never fresh after a restart.
+  // A pre-restart signal is never fresh after a restart. A start in the future (clock moved
+  // back while the app was closed) restarts the cooldown now, so it still ends by the maximum.
   return {
     phase: 'cooldown',
     consecutiveLosses: losses,
-    cooldown: { ...cooldown, settledSince: null, lastValidAt: null },
+    cooldown: {
+      ...cooldown,
+      startedAt: Math.min(cooldown.startedAt, now),
+      settledSince: null,
+      lastValidAt: null,
+    },
   };
 }
 

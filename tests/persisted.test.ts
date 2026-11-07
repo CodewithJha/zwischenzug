@@ -54,6 +54,15 @@ describe('parseEngine (restart persistence)', () => {
     expect(e.cooldown.lastValidAt).toBeNull();
   });
 
+  it('a cooldown that starts in the future (clock moved back) restarts now', () => {
+    const e = parseEngine(
+      { phase: 'cooldown', cooldown: { gameId: 'abcdefgh', startedAt: NOW + 3_600_000 } },
+      NOW,
+    );
+    if (e.phase !== 'cooldown') throw new Error('expected a cooldown');
+    expect(e.cooldown.startedAt).toBe(NOW);
+  });
+
   it('a damaged cooldown restores as a new cooldown, never as unlocked', () => {
     const e = parseEngine({ phase: 'cooldown', cooldown: { gameId: 5 } }, NOW);
     expect(e.phase).toBe('cooldown');
