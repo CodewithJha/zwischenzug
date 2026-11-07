@@ -25,8 +25,9 @@ See [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md) for milestone sta
 Short version: the app shell, consent, Lichess loss detection, the lock, the cooldown engine,
 the timer fallback, the override, the game log, delete-all and restart persistence are
 implemented and verified (unit tests plus scripted runs against live lichess.org). The Presage
-SDK **loads and binds** on macOS Apple Silicon, but **live pulse measurement has not been
-verified** yet because it needs a Presage API key and a camera session.
+SDK **loads and binds** on macOS Apple Silicon and rejects a bad key as expected, but **live
+pulse measurement has not been verified** yet because it needs a real Presage API key and a
+camera session. [docs/MANUAL_TESTS.md](docs/MANUAL_TESTS.md) has the steps.
 
 ## Requirements
 
@@ -55,12 +56,20 @@ and Electron will exit immediately. Use `env -u ELECTRON_RUN_AS_NODE npm run dev
 
 ### Getting a Presage API key
 
-1. Create a free account at <https://physiology.presagetech.com/> (the challenge runs on the
-   free trial; no card needed).
+1. Create a free account at <https://physiology.presagetech.com/auth/register> (the link the
+   challenge page uses).
 2. Copy your API key.
 3. Either put it in `.env` as `PRESAGE_API_KEY=...` (development), or paste it into the app
    (side panel or check-in screen). Keys entered in the app are encrypted with the OS keychain
    (Electron `safeStorage`) and stored in the app's data folder. The key is never in source.
+   `PRESAGE_API_KEY` wins over a saved key.
+4. `npm run presage:check` confirms Presage accepts the key without using the camera (blank
+   frames for 20 s; the key is never printed).
+5. In the app, **Presage diagnostics** (side panel or check-in screen) shows whether the SDK
+   loaded, whether a key is present, the OS camera permission, and a live measurement with raw
+   readings, time to first reading, readings per second and the share of stable readings. It
+   says **REAL SDK** only while a Presage session is actually running, and **FALLBACK** with
+   the reason otherwise. Readings on that screen are not saved.
 
 Note: Presage's sample notes that some keys are not enabled for cardio metrics. Zwischenzug
 requests only `PULSE_RATE`. If your key is not provisioned for it, the SDK reports an error,
@@ -85,6 +94,7 @@ the app shows it and falls back to the timer.
 | `npm run format` / `format:check` | Prettier                                                          |
 | `npm test`                        | Vitest unit tests                                                 |
 | `npm run check`                   | typecheck + lint + format check + tests                           |
+| `npm run presage:check`           | Check the Presage key from env/`.env` without a camera            |
 | `npm run dist:dir`                | Unsigned unpacked macOS app in `release/`                         |
 | `npm run dist:mac`                | macOS arm64 DMG (needs signing identity for distribution)         |
 
@@ -114,7 +124,8 @@ Defaults live in [`src/core/config.ts`](src/core/config.ts). Override them with 
   The app page is the only page allowed to request it (video only). Lichess has no device
   permissions at all.
 - **Processing**: on-device by the SmartSpectra SDK. No video or frames are uploaded or saved.
-  The SDK contacts Presage to validate the API key/subscription. SDK telemetry is disabled.
+  The SDK contacts Presage to check the API key and usage (seen in its logs: device pairing
+  and usage verification). SDK telemetry is disabled.
 - **Stored locally** (app data folder): consent choice, Lichess username, baseline pulse, and a
   game log (result, baseline, first pulse reading after the loss, time to unlock, unlock reason).
   Pulse values are not written to the diagnostic log file.
@@ -124,12 +135,20 @@ Defaults live in [`src/core/config.ts`](src/core/config.ts). Override them with 
   of Lichess or delete that folder to remove them. A saved Presage key is kept; clear it by
   saving an empty key.
 - **Network**: lichess.org (the site itself, plus its public API to detect finished games) and
-  Presage's key validation. Nothing else.
+  Presage's key and usage checks. Nothing else.
+- **Export**: "Export CSV" / "Export JSON" in the side panel save the game log (oldest first:
+  result, losses in a row, baseline, pulse at loss, time to unlock, unlock reason) to a file
+  you choose. Nothing is exported automatically.
 
 ## Known limitations
 
 - **Self-control, not enforcement.** You can quit the app, play in a browser, or delete the
   state file. The lock makes the impulsive requeue harder; it cannot make it impossible.
+  Changing the system clock while the app runs has no effect, but moving it forward while
+  the app is closed (or while the computer sleeps) does shorten a cooldown.
+- **SDK start pauses the main process.** Starting a Presage session blocks for about 2-5 s
+  (measured with the main-process SDK), so the app can feel briefly unresponsive when the
+  check-in, diagnostics or a cooldown starts the camera.
 - **Detection latency.** Game end is detected from Lichess's public game stream (sub-second to
   a few seconds). A click on "rematch"/"new opponent" faster than that can still go through.
 - **Lichess internals.** The request-blocking layer uses Lichess URL paths and sockets that can

@@ -10,14 +10,16 @@ and only reports readings.
 ```text
 src/
   core/            Pure TypeScript. No Electron, no Node built-ins (enforced by ESLint).
+    clock.ts         Steady clock: wall-clock epoch advanced by a monotonic timer
     config.ts        Config type, defaults, resolveConfig(file, env)
     cooldown.ts      Cooldown state machine (step), unlock rule, derived view
+    export.ts        Game log -> CSV
     persisted.ts     Validating parsers for state.json / games.json
     lichess-game.ts  Lichess game JSON -> win/loss/draw/ignored/ongoing for a user
     lichess-url.ts   lichess.org URL checks, game id from URL
     lock-rules.ts    Which Lichess requests to cancel while locked
     ndjson.ts        Incremental NDJSON splitter
-    pulse.ts         Median / baseline from calibration readings
+    pulse.ts         Median / baseline from calibration readings; diagnostics reading stats
   shared/          Types and the IPC contract shared by main, preload and renderer
     types.ts, ipc.ts
   main/            Electron main process
@@ -42,9 +44,12 @@ src/
     biometrics/
       provider.ts    BiometricProvider interface (adapter #1)
       presage.ts     PresageProvider (SmartSpectra renderer SDK)
-    views/           consent, setup, calibration, panel, cooldown, pulse-monitor, api-key
+    views/           consent, setup, calibration, panel, cooldown, pulse-monitor, api-key,
+                     diagnostics
 tests/             Vitest unit tests + real Lichess payload fixtures
+  renderer/          Renderer tests with a fake SDK (type-checked with the web config)
 scripts/build.mjs  esbuild bundles for main / preload / renderer
+scripts/presage-key-check.mjs  Key check with the main-process SDK and blank frames
 build/             macOS entitlements for electron-builder
 ```
 
@@ -78,7 +83,13 @@ stateDiagram-v2
 
 Screens are derived from profile + engine state, never stored:
 `consent` (no consent) -> `setup` (no username) -> `cooldown` (engine locked; wins over
-everything else) -> `calibration` (camera mode without a baseline, or recalibrating) -> `playing`.
+everything else) -> `diagnostics` (opened by the user; in memory only, closed by any engine
+phase change) -> `calibration` (camera mode without a baseline, or recalibrating) -> `playing`.
+
+Engine time comes from a steady clock (`core/clock.ts`): epoch milliseconds advanced by
+`performance.now()` and re-anchored to the wall clock when the computer wakes
+(`powerMonitor` `resume`). Changing the system clock while the app runs therefore neither
+ends nor extends a cooldown.
 
 Unlock rule details (`core/cooldown.ts`):
 
@@ -170,8 +181,18 @@ The official Electron integration (from the SDK repo's `electron-quickstart`) is
   no LLM insights. `decodeMetrics(buf).cardio.pulseRate[]` gives `{value, stable, confidence,
 timestamp}`; `stable` means confidence >= 40 (about +/-3 bpm, per the SDK's protobuf docs).
 - Errors (`kAuthenticationFailed`, `kCreditExhausted`, `kNetworkError`, `kInputUnavailable`,
-  ...), a missing key, a camera denial or a failed native load all become
-  `unavailable(reason)`. The UI says so and the engine's timer fallback applies.
+  the SDK's 30 s startup watchdog `kProcessingFailed`, ...), getUserMedia failures, a missing
+  key, a camera denial or a failed native load all become `unavailable(reason)`. The provider
+  then stops the SDK (camera off), the UI says so and the engine's timer fallback applies.
+- Observed with a bogus key (main-process SDK, blank frames): `start()` blocks about 2-5 s,
+  then `error` code 2 `kAuthenticationFailed` (retryable=false) and status `kError`.
+- The SDK's preload bridge is a single shared MessagePort. `PresageProvider` chains
+  teardowns (stop, then destroy) and a new session waits for the previous one, because a
+  late `destroy()` would close the new session's port. Callbacks from an older session are
+  ignored. Covered by `tests/renderer/presage-provider.test.ts`.
+- Diagnostics screen: environment facts from main (`getDiagnostics`: key source only, OS
+  camera status without prompting, SDK/Electron version, dev or packaged) plus a live session
+  whose raw readings stay in that view.
 - Packaging: the native closure ships as `resources/smartspectra` (outside asar), and
   `SMARTSPECTRA_CAPI_PATH` is set unconditionally in packaged builds.
 
@@ -185,7 +206,8 @@ app page, and only in camera mode. The Lichess view cannot reach `window.zz` or 
 | Concern            | Measure                                                                                                                                                                                                                     |
 | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Renderer isolation | `contextIsolation`, `sandbox`, `nodeIntegration: false`, `webviewTag: false`, `app.enableSandbox()`                                                                                                                         |
-| Lichess content    | Separate `WebContentsView`, persistent partition `persist:lichess`, **no preload**, all permission requests and checks denied                                                                                               |
+| Lichess content    | Separate `WebContentsView`, persistent partition `persist:lichess`, **no preload**, all permission requests and checks denied, DevTools disabled, keyboard focus moved to the app page while hidden                         |
+| Instances          | `requestSingleInstanceLock` per data folder, so two instances never write the same state files                                                                                                                              |
 | Navigation         | Lichess: top-level navigation and redirects allowed only to https `lichess.org`/`*.lichess.org`; other links open in the system browser; popups denied (Lichess popups load in place). App window: no navigation, no popups |
 | IPC                | Single typed `ZzApi` via `contextBridge`; handlers check `senderFrame.url` is our bundled page and coerce argument types                                                                                                    |
 | CSP                | `default-src 'none'`; scripts/styles self only; `worker-src blob:` (SDK requirement); `media-src blob: mediastream:`                                                                                                        |
@@ -202,7 +224,11 @@ app page, and only in camera mode. The Lichess view cannot reach `window.zz` or 
 An active cooldown is written on entry, keeps its original `startedAt` across restarts, and
 drops any pre-restart signal (`settledSince`, `lastValidAt`), so a restart never shortens it.
 Closing the app longer than the fallback time is treated as a valid pause (the timer rule
-applies on return).
+applies on return). A start time in the future (clock moved back while closed) restarts the
+cooldown at launch, so it still ends by the maximum.
+
+Each `games.json` entry records `consecutiveLosses` after that game (absent in entries logged
+before it existed). On a finished game the state file is written before the log.
 
 ## Decisions (ADR-style)
 
@@ -239,8 +265,15 @@ applies on return).
 | Timer fallback without key/SDK                          | Verified (UI + unit) | Cooldown screen states the fallback; engine tests                                                                                    |
 | Presage SDK native load + IPC bind (dev + packaged)     | Verified             | `SmartSpectra SDK loaded and bound` on darwin-arm64, also from the packaged `.app`                                                   |
 | Unsigned macOS package                                  | Verified             | `npm run dist:dir` -> `release/mac-arm64/Zwischenzug.app`                                                                            |
-| Presage live pulse, validation hints, error mapping     | **Not verified**     | Needs an API key and a camera session                                                                                                |
+| Bad key -> `kAuthenticationFailed`                      | Verified (SDK)       | `npm run presage:check` with a bogus key; same mapping unit-tested in the provider                                                   |
+| Provider teardown order, camera release on SDK error    | Verified (unit)      | `tests/renderer/presage-provider.test.ts` (fails on the previous code)                                                               |
+| Diagnostics screen (no key)                             | Verified             | Smoke run: SDK 3.4.0 loaded, key "no", camera "not-determined", FALLBACK label, Start disabled                                       |
+| Steady clock, future start clamp                        | Verified (unit)      | `tests/clock.test.ts`, `tests/persisted.test.ts`                                                                                     |
+| Single instance                                         | Verified             | Second launch on the same data folder exited; the first kept its cooldown                                                            |
+| Timer unlock, refusals, override, restart (Phase 2)     | Verified             | Smoke runs on a seeded cooldown; `games.json` shows `timer` / `override` with durations                                              |
+| Log export                                              | Verified (unit)      | `tests/export.test.ts`; the save dialog itself was not driven                                                                        |
+| Presage live pulse, validation hints, real errors       | **Not verified**     | Needs an API key and a camera session (docs/MANUAL_TESTS.md)                                                                         |
 | Calibration end to end                                  | **Not verified**     | Depends on the above                                                                                                                 |
-| Camera permission denial path                           | **Not verified**     | Code path exists (`systemPreferences`)                                                                                               |
+| Camera permission denial path                           | **Not verified**     | Code path exists (`systemPreferences`); needs System Settings                                                                        |
 | Signed / notarized DMG                                  | Not done             | Needs an Apple Developer identity                                                                                                    |
 | Chess.com `GameSource`, breathing visual                | Planned              | See the implementation plan                                                                                                          |

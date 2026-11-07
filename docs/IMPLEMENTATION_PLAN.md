@@ -41,8 +41,19 @@ Status legend: [x] done and verified, [~] implemented but not verified, [ ] not 
 - [~] Validation hints and SDK error -> timer fallback mapping
 - [~] Calibration (60 s, median of stable readings, retry / timer-only)
 - [~] Live pulse vs baseline on the cooldown screen
-- [ ] **Run with a real API key on this Mac**: time to first reading, readings per second,
-      share of `stable`, start/stop latency, credit usage per session
+- [x] Diagnostics screen (SDK/key/camera status, REAL SDK vs FALLBACK, raw readings, stats)
+- [x] `npm run presage:check`: key check without a camera (bad key -> `kAuthenticationFailed`)
+- [x] Provider: serialized teardown (shared preload port), camera released on SDK errors
+- [ ] **Run with a real API key on this Mac** (docs/MANUAL_TESTS.md): time to first reading,
+      readings per second, share of `stable`, start/stop latency, credit usage per session
+
+## Phase 2 hardening
+
+- [x] Steady clock (system clock changes ignored while running); future start clamped on restore
+- [x] Lichess DevTools disabled; focus moved off the hidden Lichess view
+- [x] Single instance per data folder; renderer rejections logged
+- [x] Log: consecutive losses per game; CSV/JSON export
+- [~] Failure cases needing hardware or a key: see docs/MANUAL_TESTS.md
 
 ## M6: Log, delete-all, restart
 
@@ -56,7 +67,7 @@ Status legend: [x] done and verified, [~] implemented but not verified, [ ] not 
 1. [ ] Verify Presage end to end with a key (M5 boxes above); tune `calibration.minSamples`,
        `signalTimeoutSec` and `sustainSec` from real data
 2. [ ] Verify camera-denied path (System Settings > Camera off)
-3. [ ] Self-experiment: about 30 real games; export the log for the write-up
+3. [ ] Self-experiment: about 30 real games; export the log for the write-up (export ready)
 4. [ ] "You after losses" summary (average pulse change, time to unlock) above the log
 5. [ ] Breathing-driven visual (SDK breathing trace) instead of the fixed 4/6 animation
 6. [ ] App icon, README screenshots/GIF, demo video
