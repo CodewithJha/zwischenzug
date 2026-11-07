@@ -22,6 +22,8 @@ const PANEL_WIDTH = 380;
 /** Height of the sign-in bar above Lichess (matches --bar-height in styles.css). */
 const BAR_HEIGHT = 56;
 
+// Before ready and before userData is resolved: menu items and the default data folder use it.
+app.setName('Zwischenzug');
 app.enableSandbox();
 if (process.env.ZZ_USER_DATA_DIR) app.setPath('userData', process.env.ZZ_USER_DATA_DIR);
 // Scripted smoke runs must never open the real camera; Chromium substitutes a test pattern.
@@ -32,6 +34,8 @@ if (process.env.ZZ_SMOKE_DIR && !app.isPackaged) {
 if (!app.requestSingleInstanceLock()) app.exit(0);
 
 app.whenReady().then(() => {
+  // Packaged builds get the icon from the bundle; in dev the dock would show Electron's.
+  if (!app.isPackaged) app.dock?.setIcon(path.join(app.getAppPath(), 'build', 'icon.png'));
   const config = loadConfig();
   const dataDir = app.getPath('userData');
   const clock = steadyClock(Date.now, () => performance.now());

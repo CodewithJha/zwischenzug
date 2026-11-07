@@ -20,6 +20,7 @@
     "test:watch": "vitest",
     "check": "npm run typecheck && npm run lint && npm run format:check && npm test",
     "presage:check": "node scripts/presage-key-check.mjs",
+    "icon": "electron scripts/make-icon.mjs",
     "dist:mac": "npm run build && electron-builder --mac --arm64",
     "dist:dir": "npm run build && electron-builder --dir"
   },
@@ -59,6 +60,7 @@
     ],
     "mac": {
       "category": "public.app-category.games",
+      "icon": "build/icon.icns",
       "target": "dmg",
       "hardenedRuntime": true,
       "entitlements": "build/entitlements.mac.plist",
