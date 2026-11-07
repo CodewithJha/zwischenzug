@@ -42,10 +42,14 @@ export interface CooldownView {
   baselineBpm: number | null;
   upperBandBpm: number | null;
   lastBpm: number | null;
+  /** First stable reading after the loss. */
+  pulseAtLossBpm: number | null;
   signalFresh: boolean;
   settledForSec: number;
   sustainSec: number;
+  minWaitSec: number;
   minWaitRemainingSec: number;
+  fallbackSec: number;
   /** Seconds until the no-signal timer would unlock (it only applies while the signal is lost). */
   fallbackRemainingSec: number;
   maxRemainingSec: number;

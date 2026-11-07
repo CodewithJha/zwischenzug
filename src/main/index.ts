@@ -24,6 +24,10 @@ const BAR_HEIGHT = 56;
 
 app.enableSandbox();
 if (process.env.ZZ_USER_DATA_DIR) app.setPath('userData', process.env.ZZ_USER_DATA_DIR);
+// Scripted smoke runs must never open the real camera; Chromium substitutes a test pattern.
+if (process.env.ZZ_SMOKE_DIR && !app.isPackaged) {
+  app.commandLine.appendSwitch('use-fake-device-for-media-stream');
+}
 // One instance per data folder: two would race on state.json and both watch Lichess.
 if (!app.requestSingleInstanceLock()) app.exit(0);
 

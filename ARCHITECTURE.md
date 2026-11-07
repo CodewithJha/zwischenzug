@@ -46,8 +46,9 @@ src/
     biometrics/
       provider.ts    BiometricProvider interface (adapter #1)
       presage.ts     PresageProvider (SmartSpectra renderer SDK)
-    views/           consent, setup, calibration, panel, cooldown, pulse-monitor, api-key,
-                     diagnostics
+    views/           consent, setup, calibration, panel, cooldown, api-key, diagnostics;
+                     unlock-path.ts picks the path the cooldown shows (pulse / waiting /
+                     timer) and why
 tests/             Vitest unit tests + real Lichess payload fixtures
   renderer/          Renderer tests with a fake SDK (type-checked with the web config)
 scripts/build.mjs  esbuild bundles for main / preload / renderer

@@ -6,7 +6,6 @@ import { consentView } from './views/consent';
 import { cooldownView } from './views/cooldown';
 import { diagnosticsView } from './views/diagnostics';
 import { panelView } from './views/panel';
-import { pulseMonitor } from './views/pulse-monitor';
 import { setupView } from './views/setup';
 
 let latest: AppSnapshot | null = null;
@@ -21,9 +20,7 @@ const VIEWS: Record<Screen, (s: AppSnapshot) => View> = {
   playing: panelView,
   cooldown: (s) =>
     cooldownView(
-      s.profile.consent?.mode === 'camera' && s.cooldown?.baselineBpm != null
-        ? pulseMonitor(provider)
-        : null,
+      s.profile.consent?.mode === 'camera' && s.cooldown?.baselineBpm != null ? provider : null,
     ),
   diagnostics: () => diagnosticsView(provider),
 };
