@@ -38,6 +38,7 @@ export function registerIpc(
   session: Session,
   config: Config,
   diagnostics: () => DiagnosticsInfo,
+  openLichessLogin: () => void,
 ): void {
   const handle = (
     channel: string,
@@ -69,6 +70,15 @@ export function registerIpc(
   handle(IPC.deleteAll, () => session.deleteAll(), denied);
   handle(IPC.setDiagnostics, (open) => session.setDiagnostics(open === true), denied);
   handle(IPC.getDiagnostics, () => diagnostics(), null);
+  handle(
+    IPC.openLichessLogin,
+    (): Result => {
+      if (session.screen !== 'playing') return { ok: false, error: 'Not available right now.' };
+      openLichessLogin();
+      return { ok: true };
+    },
+    denied,
+  );
   handle(
     IPC.exportLog,
     async (format): Promise<Result> => {

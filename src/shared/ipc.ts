@@ -24,6 +24,7 @@ export const IPC = {
   setDiagnostics: 'zz:set-diagnostics',
   getDiagnostics: 'zz:get-diagnostics',
   exportLog: 'zz:export-log',
+  openLichessLogin: 'zz:open-lichess-login',
   log: 'zz:log',
 } as const;
 
@@ -52,5 +53,7 @@ export interface ZzApi {
   getDiagnostics(): Promise<DiagnosticsInfo>;
   /** Saves the game log via a save dialog. */
   exportLog(format: 'csv' | 'json'): Promise<Result>;
+  /** Shows the Lichess sign-in page in the embedded view. */
+  openLichessLogin(): Promise<Result>;
   log(level: 'info' | 'warn' | 'error', message: string): void;
 }

@@ -56,9 +56,19 @@ export function panelView(): View {
     message.textContent = res.ok ? 'Game log exported.' : res.error;
   };
 
+  // Sits above the Lichess view (main leaves room for it) while play is not allowed.
+  const barText = h('span');
+  const loginBtn = h(
+    'button',
+    { class: 'primary', onclick: () => void zz().openLichessLogin() },
+    'Open Lichess sign-in',
+  );
+  const bar = h('div', { class: 'signin-bar', role: 'status' }, barText, loginBtn);
+
   const el = h(
     'aside',
     { class: 'panel' },
+    bar,
     h('h1', {}, 'Zwischenzug'),
     status,
     h(
@@ -87,7 +97,17 @@ export function panelView(): View {
     update(s: AppSnapshot) {
       const p = s.profile;
       const mode = p.consent?.mode === 'camera' ? 'camera between games' : 'timer only';
+      const verified = s.identity.status === 'verified';
+      bar.hidden = verified;
+      barText.textContent = `${s.identity.message} Games are blocked until then.`;
+      if (s.identity.status === 'checking') barText.textContent = s.identity.message;
+      loginBtn.hidden = s.identity.status !== 'signed-out';
       const lines: (HTMLElement | null)[] = [
+        h(
+          'div',
+          { class: verified ? '' : 'warn' },
+          verified ? `${s.identity.message} · play allowed` : s.identity.message,
+        ),
         h(
           'div',
           {},

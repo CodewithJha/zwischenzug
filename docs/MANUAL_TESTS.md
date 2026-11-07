@@ -49,7 +49,23 @@ usable readings it got.
 | Signal lost     | During a real cooldown, leave the frame                           | "No pulse reading right now. Timer fallback in ..." and the timer still unlock |
 | Lichess offline | Wi-Fi off while playing                                           | Panel: "cannot reach Lichess; retrying"; recovers when Wi-Fi is back           |
 
-## 5. Real cooldown
+## 5. Lichess sign-in check
+
+The logged-out case is verified by a smoke run. The signed-in cases need your account:
+
+1. Launch with your test profile. While Lichess is signed out, the amber bar above Lichess
+   reads "Sign in to Lichess as @you to play. Games are blocked until then." Click a pool
+   (e.g. 1+0): no game starts.
+2. Click **Open Lichess sign-in** and sign in as the configured account. Within about a second
+   the bar disappears and the panel shows "Signed in as @you · play allowed". The log line is
+   `lichess sign-in: ... -> verified`. Start a casual game: it works.
+3. Sign out from the Lichess avatar menu. The bar returns immediately; pools do nothing.
+4. Sign in as a different account (if you have one): the bar says "Signed in as @other. Sign
+   out and sign in to Lichess as @you to play."; no game starts.
+5. Turn Wi-Fi off and wait up to a minute: the bar says it could not check the sign-in. Turn
+   Wi-Fi on: it clears within about 10 s.
+
+## 6. Real cooldown
 
 1. On Lichess (left pane, signed in) play a casual game, make at least two moves each (fewer
    counts as aborted, not a loss), then resign.
@@ -75,6 +91,6 @@ From step 2 (the stats line and the readings table):
 5. Validation hints and errors in "SDK events"
 6. Seconds from Stop until the camera light went off
 
-From steps 3-5: your baseline and sample count, the expected/actual result for each failure
+From steps 3-6: your baseline and sample count, the expected/actual result for each failure
 case, and for the real cooldown the pulse at loss, time to unlock and unlock reason from the
 log. Also anything that was confusing on screen.

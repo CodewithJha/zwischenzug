@@ -52,12 +52,22 @@ export interface CooldownView {
   suggestedPauseUntil: number | null;
 }
 
+export type IdentityStatus = 'checking' | 'verified' | 'signed-out' | 'wrong-account' | 'error';
+
+/** Who is signed in to the embedded Lichess session, compared with the configured account. */
+export interface IdentityView {
+  status: IdentityStatus;
+  signedInAs: string | null;
+  message: string;
+}
+
 export interface AppSnapshot {
   screen: Screen;
   profile: Profile;
   consecutiveLosses: number;
   cooldown: CooldownView | null;
   lichess: { status: 'idle' | 'watching' | 'error'; message: string | null };
+  identity: IdentityView;
   presage: { sdkLoaded: boolean; sdkError: string | null; apiKeyConfigured: boolean };
   settings: {
     overrideSentence: string;

@@ -8,6 +8,7 @@ import {
   type Unlock,
 } from '../core/cooldown';
 import { logToCsv } from '../core/export';
+import { identityView, playBlocked, type IdentityObservation } from '../core/identity';
 import { freshState, type PersistedLog, type PersistedState } from '../core/persisted';
 import type { Result } from '../shared/ipc';
 import type { AppSnapshot, CameraMode, FinishedGame, GameLogEntry, Screen } from '../shared/types';
@@ -33,6 +34,8 @@ export class Session {
   private recalibrating = false;
   private diagnostics = false;
   private lichess: AppSnapshot['lichess'] = { status: 'idle', message: null };
+  /** In memory only: never trust a sign-in from a previous run. */
+  private identity: IdentityObservation = { kind: 'checking' };
   private readonly rules: CooldownRules;
   private readonly now: () => number;
   private readonly listeners = new Set<() => void>();
@@ -81,6 +84,19 @@ export class Session {
     return this.state.engine.phase === 'cooldown';
   }
 
+  /** True while Lichess play requests must be cancelled (cooldown or unverified sign-in). */
+  get playBlocked(): boolean {
+    return playBlocked(this.locked, this.identityView());
+  }
+
+  get identityVerified(): boolean {
+    return this.identityView().status === 'verified';
+  }
+
+  private identityView(): AppSnapshot['identity'] {
+    return identityView(this.identity, this.state.profile.username);
+  }
+
   get username(): string | null {
     return this.state.profile.username;
   }
@@ -99,6 +115,7 @@ export class Session {
       cooldown:
         engine.phase === 'cooldown' ? cooldownView(engine.cooldown, this.now(), this.rules) : null,
       lichess: this.lichess,
+      identity: this.identityView(),
       presage: { ...this.deps.presageStatus(), apiKeyConfigured: this.deps.hasApiKey() },
       settings: {
         overrideSentence: c.overrideSentence,
@@ -162,6 +179,14 @@ export class Session {
 
   setLichessStatus(status: AppSnapshot['lichess']): void {
     this.lichess = status;
+    this.emit();
+  }
+
+  setIdentity(obs: IdentityObservation): void {
+    const before = this.identityView().status;
+    this.identity = obs;
+    const after = this.identityView().status;
+    if (before !== after) logger.info(`lichess sign-in: ${before} -> ${after}`);
     this.emit();
   }
 

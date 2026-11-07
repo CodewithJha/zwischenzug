@@ -16,6 +16,7 @@ src/
     export.ts        Game log -> CSV
     persisted.ts     Validating parsers for state.json / games.json
     lichess-game.ts  Lichess game JSON -> win/loss/draw/ignored/ongoing for a user
+    identity.ts      Lichess sign-in: parse /account/info, decide whether play is allowed
     lichess-url.ts   lichess.org URL checks, game id from URL
     lock-rules.ts    Which Lichess requests to cancel while locked
     ndjson.ts        Incremental NDJSON splitter
@@ -35,6 +36,7 @@ src/
     lichess/
       source.ts      LichessGameSource: poll + per-game stream + export fallback
       view.ts        Lichess WebContentsView: own session, no preload, nav guard
+      identity.ts    Who is signed in to the embedded session (session.fetch + cookie watch)
       lock.ts        webRequest blocker for the Lichess session
     log.ts           electron-log
     smoke.ts         Scripted verification mode (ZZ_SMOKE_DIR)
@@ -145,16 +147,44 @@ the list. `GET /api/stream/event` needs an OAuth token; it is the upgrade path i
 public endpoints prove unreliable. Reading the board from the page DOM was rejected for
 fair-play reasons and fragility.
 
-**Lock** has two layers:
+**Lock** has two layers during a cooldown (only the second while the sign-in is unverified):
 
 1. The Lichess view is hidden (`setVisible(false)`) whenever the screen is not `playing`. The
    cooldown screen covers the whole window, so there is nothing to click or type into. This
    does not depend on Lichess's markup.
-2. While locked, `session.webRequest.onBeforeRequest` on the Lichess partition cancels
+2. While locked or unverified, `session.webRequest.onBeforeRequest` on the Lichess partition cancels
    `POST /setup/hook|friend|ai`, challenge accept/create, tournament/swiss join, board seek,
    `*/rematch`, and new `wss://*.lichess.org/lobby/socket*` and `/play/*` sockets. Verified:
    a seek POST and a lobby socket opened from inside the Lichess page both failed while
    locked, and an ordinary GET still worked.
+
+**Sign-in check.** Detection watches the configured account's public feed, so a game played
+logged out, or as another account, would never be seen. Play is therefore only allowed while
+the embedded Lichess session is verified as the configured account (`core/identity.ts`,
+`main/lichess/identity.ts`):
+
+- Main calls `GET https://lichess.org/account/info` (`Accept: application/json`) with
+  `session.fetch` on the Lichess partition, so the request carries that session's own cookies.
+  No password, no token. Verified live from Electron: logged out it returns
+  `401 {"error":"Login required"}`. Logged in it returns `200 {id, username, ...}` (lila
+  `Account.info`, the old mobile app's endpoint). From curl the same URL gets a Cloudflare
+  challenge; from Electron's network stack it does not. `/api/account` was rejected: it
+  ignores session cookies (`401 Missing authorization header`).
+- `cache: 'no-store'` is required: Lichess sends `Cache-Control: private, max-age=20`, and a
+  probe showed `session.fetch` otherwise answers from the HTTP cache, which could outlive a
+  logout.
+- Re-checked every 60 s, after every Lichess navigation, and 10 s after an error. A change of
+  the login session id inside the `lila2` cookie (absent while logged out; seen live: only
+  `sid`) immediately sets the state to "checking" (blocked) and re-checks, so signing out or
+  switching accounts cannot race the next check. Stale answers are discarded by sequence number.
+- Anything other than a verified match (checking, signed out, another account, HTTP error,
+  network error) blocks play through the request lock below. The Lichess view stays visible
+  so the user can sign in and browse; a bar above it says "Sign in to Lichess as @username to
+  play" and opens the sign-in page. Usernames compare case-insensitively. The cooldown timer
+  and override are unaffected. Verified live (logged out): seek POST and lobby socket
+  cancelled, ordinary GET 200, sign-in page reachable.
+- OAuth PKCE was considered: it proves who authorized a token once, not who is signed in to
+  the embedded session later, so it would not catch an account switch. Not used.
 
 CSS injection was considered and rejected as the primary mechanism: pairing, challenges and
 rematches also happen through URLs, socket messages and page features CSS cannot reliably
@@ -260,6 +290,8 @@ before it existed). On a finished game the state file is written before the log.
 | Cooldown engine + unlock rule                           | Verified (unit)      | 23 tests in `tests/cooldown.test.ts`                                                                                                 |
 | Loss detection from live Lichess                        | Verified             | Real finished game detected as a loss within ~1 s of launch; a live session showed 6 consecutive real games detected from the stream |
 | Lock layer 1 (hide view) + layer 2 (request block)      | Verified             | View hidden while locked; seek POST and lobby socket from the Lichess page failed; a GET succeeded                                   |
+| Sign-in check, logged out                               | Verified             | Smoke run on live lichess.org: `signed-out`; seek POST and lobby socket cancelled; GET 200; sign-in button opened `/login`           |
+| Sign-in check, logged in / wrong account                | Verified (unit)      | `tests/identity.test.ts`; logged-in live check is a manual test (docs/MANUAL_TESTS.md)                                               |
 | Override, game log, delete-all, refusal during cooldown | Verified             | Scripted UI runs; `games.json` contents checked                                                                                      |
 | Restart during cooldown                                 | Verified             | Countdown continued across relaunch (0:32 -> 0:24)                                                                                   |
 | Timer fallback without key/SDK                          | Verified (UI + unit) | Cooldown screen states the fallback; engine tests                                                                                    |

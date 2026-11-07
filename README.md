@@ -80,7 +80,11 @@ the app shows it and falls back to the timer.
 1. **Consent**: choose "Allow camera between games" or "Timer only, no camera".
 2. **Lichess username**: the account whose public game feed is watched.
 3. **Check-in** (camera mode): sit as you usually play, light in front of you, one minute.
-4. **Play**: sign in to Lichess in the left pane and play normally.
+4. **Play**: sign in to Lichess in the left pane as that account and play normally. Until the
+   app has confirmed that the embedded Lichess session is signed in as that account, new games
+   are blocked and a bar above Lichess says "Sign in to Lichess as @username to play".
+   Browsing and the sign-in page always work. Zwischenzug never sees your Lichess password: it
+   asks lichess.org who is signed in, using the embedded session's own cookies.
 
 ## Scripts
 
@@ -134,7 +138,8 @@ Defaults live in [`src/core/config.ts`](src/core/config.ts). Override them with 
   Your Lichess login cookies live in a separate session folder (`Partitions/lichess`); sign out
   of Lichess or delete that folder to remove them. A saved Presage key is kept; clear it by
   saving an empty key.
-- **Network**: lichess.org (the site itself, plus its public API to detect finished games) and
+- **Network**: lichess.org (the site itself, its public API to detect finished games, and
+  `/account/info` with the embedded session's cookies to check who is signed in) and
   Presage's key and usage checks. Nothing else.
 - **Export**: "Export CSV" / "Export JSON" in the side panel save the game log (oldest first:
   result, losses in a row, baseline, pulse at loss, time to unlock, unlock reason) to a file
@@ -153,6 +158,10 @@ Defaults live in [`src/core/config.ts`](src/core/config.ts). Override them with 
   a few seconds). A click on "rematch"/"new opponent" faster than that can still go through.
 - **Lichess internals.** The request-blocking layer uses Lichess URL paths and sockets that can
   change without notice. The primary lock (hiding the Lichess view) does not depend on them.
+  The sign-in check uses `/account/info`, an endpoint built for Lichess's old mobile app; if
+  Lichess removes or changes it, play stays blocked (fail closed) and the bar says why.
+- **Sign-in check latency.** Sign-out and account switches are caught at once (login cookie
+  change); a session that expires on the server side is caught within a minute.
 - **Pulse measurement unverified here.** Time to first reading, how often readings arrive, and
   how many count as "stable" on a typical laptop webcam still need on-device testing. The
   10-reading calibration minimum is a guess and configurable.

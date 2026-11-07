@@ -7,6 +7,7 @@
   --warn: #e0b45a;
   --danger: #e3635f;
   --panel-width: 380px;
+  --bar-height: 56px;
   color-scheme: dark;
 }
 
@@ -29,6 +30,26 @@ body[data-screen='playing'] #app {
   width: var(--panel-width);
   height: 100vh;
   overflow-y: auto;
+}
+
+.signin-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: calc(100vw - var(--panel-width));
+  height: var(--bar-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 16px;
+  background: #3a2f17;
+  color: var(--text);
+}
+
+.signin-bar[hidden],
+button[hidden] {
+  display: none;
 }
 
 .screen {

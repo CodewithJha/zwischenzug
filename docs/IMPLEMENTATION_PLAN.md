@@ -55,6 +55,12 @@ Status legend: [x] done and verified, [~] implemented but not verified, [ ] not 
 - [x] Log: consecutive losses per game; CSV/JSON export
 - [~] Failure cases needing hardware or a key: see docs/MANUAL_TESTS.md
 
+## Phase 3: polish (Nov 7)
+
+- [x] P0: play only with a verified Lichess sign-in as the configured account
+      (`/account/info` via the embedded session; logged-out path verified live)
+- [~] P0: signed-in / wrong-account paths (unit-tested; manual test 5)
+
 ## M6: Log, delete-all, restart
 
 - [x] Game log with baseline, pulse at loss, time to unlock, unlock reason
