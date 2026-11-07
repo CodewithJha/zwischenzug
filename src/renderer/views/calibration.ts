@@ -7,8 +7,10 @@ import { apiKeyForm } from './api-key';
 /** One-minute check-in: collects stable pulse readings and saves their median as baseline. */
 export function calibrationView(provider: BiometricProvider): View {
   const video = h('video', { class: 'preview', muted: true, autoplay: true, playsinline: true });
-  const hint = h('p', { class: 'hint' });
+  const hint = h('p', { class: 'hint', role: 'status' }, 'Camera off until you start.');
   const progress = h('p', { class: 'muted' });
+  const bar = h('progress', { class: 'check-in', max: '1', value: '0' });
+  bar.hidden = true;
   const live = h('div', { class: 'bpm' }, '–');
   const startBtn = h('button', { class: 'primary' }, 'Start check-in');
   const error = h('p', { class: 'error', role: 'alert' });
@@ -51,6 +53,8 @@ export function calibrationView(provider: BiometricProvider): View {
           startBtn.disabled = false;
           startBtn.textContent = 'Try again';
           error.textContent = `${s.reason} You can use the timer instead.`;
+          hint.textContent = 'Camera off.';
+          bar.hidden = true;
           return;
         }
         if (s.kind === 'measuring' && measuringSince === null) measuringSince = Date.now();
@@ -68,6 +72,9 @@ export function calibrationView(provider: BiometricProvider): View {
     });
     timer = window.setInterval(() => {
       const elapsed = measuringSince === null ? 0 : (Date.now() - measuringSince) / 1000;
+      bar.hidden = false;
+      bar.value = Math.min(1, elapsed / durationSec);
+      bar.setAttribute('aria-label', `Check-in ${Math.round(bar.value * 100)}% done`);
       progress.textContent = `${formatSec(Math.min(durationSec, Math.floor(elapsed)))} / ${formatSec(durationSec)} · ${samples.length} readings`;
       if (elapsed >= durationSec) {
         if (timer !== null) window.clearInterval(timer);
@@ -90,7 +97,7 @@ export function calibrationView(provider: BiometricProvider): View {
         'The camera turns off when the check-in ends.',
     ),
     keySlot,
-    h('div', { class: 'monitor' }, video, h('div', {}, live, hint, progress)),
+    h('div', { class: 'monitor' }, video, h('div', {}, live, hint, bar, progress)),
     h(
       'div',
       { class: 'actions' },

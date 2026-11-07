@@ -26,9 +26,36 @@ function logRow(g: GameLogEntry): HTMLElement {
   );
 }
 
+function fact(term: string, value: HTMLElement): HTMLElement[] {
+  return [h('dt', {}, term), h('dd', {}, value)];
+}
+
 /** Side panel shown next to Lichess while playing: status, game log, settings, delete-all. */
 export function panelView(): View {
-  const status = h('div', { class: 'status' });
+  const identityTitle = h('strong');
+  const identityDetail = h('span');
+  const identity = h(
+    'p',
+    { class: 'identity', role: 'status' },
+    h('span', { class: 'dot', 'aria-hidden': 'true' }),
+    h('span', {}, identityTitle, identityDetail),
+  );
+  const account = h('span');
+  const watcher = h('span');
+  const watchDot = h('span', { class: 'dot', 'aria-hidden': 'true' });
+  const mode = h('span');
+  const baseline = h('span');
+  const losses = h('span');
+  const facts = h(
+    'dl',
+    { class: 'facts panel-facts' },
+    ...fact('Lichess', account),
+    ...fact('Games', h('span', {}, watchDot, ' ', watcher)),
+    ...fact('Mode', mode),
+    ...fact('Baseline', baseline),
+    ...fact('Losses in a row', losses),
+  );
+  const warnings = h('div', { class: 'panel-warnings' });
   const message = h('p', { class: 'muted', role: 'status' });
   const logList = h('ol', { class: 'log' });
   let deleteArmed = false;
@@ -37,7 +64,9 @@ export function panelView(): View {
   const refreshLog = async (): Promise<void> => {
     const games = await zz().getLog();
     logList.replaceChildren(
-      ...(games.length ? games.map(logRow) : [h('li', { class: 'muted' }, 'No games yet.')]),
+      ...(games.length
+        ? games.map(logRow)
+        : [h('li', { class: 'log-empty' }, 'No finished games yet.')]),
     );
   };
 
@@ -65,30 +94,54 @@ export function panelView(): View {
   );
   const bar = h('div', { class: 'signin-bar', role: 'status' }, barText, loginBtn);
 
+  const recalibrate = h(
+    'button',
+    { onclick: () => void zz().recalibrate() },
+    'Recalibrate (1 min)',
+  );
   const el = h(
     'aside',
-    { class: 'panel' },
+    { class: 'panel', 'aria-label': 'Zwischenzug' },
     bar,
-    h('h1', {}, 'Zwischenzug'),
-    status,
     h(
-      'div',
-      { class: 'actions' },
-      h('button', { onclick: () => void zz().recalibrate() }, 'Recalibrate (1 min)'),
-      h('button', { onclick: () => void zz().setDiagnostics(true) }, 'Presage diagnostics'),
+      'header',
+      { class: 'panel-head' },
+      h('h1', {}, 'Zwischenzug'),
+      h('p', { class: 'muted' }, 'A pause after a loss, before the next game.'),
     ),
-    h('h2', {}, 'Game log'),
-    logList,
+    identity,
+    facts,
+    warnings,
     h(
-      'div',
-      { class: 'actions' },
-      h('button', { onclick: () => void exportLog('csv') }, 'Export CSV'),
-      h('button', { onclick: () => void exportLog('json') }, 'Export JSON'),
+      'section',
+      { class: 'panel-section', 'aria-labelledby': 'panel-pulse' },
+      h('h2', { id: 'panel-pulse' }, 'Pulse'),
+      h(
+        'div',
+        { class: 'actions' },
+        recalibrate,
+        h('button', { onclick: () => void zz().setDiagnostics(true) }, 'Presage diagnostics'),
+      ),
     ),
-    h('h2', {}, 'Settings'),
-    apiKeyForm(),
-    deleteBtn,
-    message,
+    h(
+      'section',
+      { class: 'panel-section', 'aria-labelledby': 'panel-log' },
+      h('h2', { id: 'panel-log' }, 'Game log'),
+      logList,
+      h(
+        'div',
+        { class: 'actions' },
+        h('button', { onclick: () => void exportLog('csv') }, 'Export CSV'),
+        h('button', { onclick: () => void exportLog('json') }, 'Export JSON'),
+      ),
+    ),
+    h(
+      'section',
+      { class: 'panel-section', 'aria-labelledby': 'panel-settings' },
+      h('h2', { id: 'panel-settings' }, 'Settings'),
+      apiKeyForm(),
+    ),
+    h('section', { class: 'panel-section danger-zone' }, deleteBtn, message),
   );
 
   let lastLosses = -1;
@@ -96,36 +149,38 @@ export function panelView(): View {
     el,
     update(s: AppSnapshot) {
       const p = s.profile;
-      const mode = p.consent?.mode === 'camera' ? 'camera between games' : 'timer only';
-      const verified = s.identity.status === 'verified';
+      const st = s.identity.status;
+      const verified = st === 'verified';
       bar.hidden = verified;
-      barText.textContent = `${s.identity.message} Games are blocked until then.`;
-      if (s.identity.status === 'checking') barText.textContent = s.identity.message;
-      loginBtn.hidden = s.identity.status !== 'signed-out';
-      const lines: (HTMLElement | null)[] = [
-        h(
-          'div',
-          { class: verified ? '' : 'warn' },
-          verified ? `${s.identity.message} · play allowed` : s.identity.message,
-        ),
-        h(
-          'div',
-          {},
-          `Lichess: @${p.username ?? '?'} · `,
-          h('span', { class: `dot ${s.lichess.status}` }),
-          ` ${s.lichess.message ?? s.lichess.status}`,
-        ),
-        h('div', {}, `Mode: ${mode}`),
-        h('div', {}, `Baseline: ${p.baseline ? `${p.baseline.bpm} bpm` : 'not set'}`),
-        h('div', {}, `Losses in a row: ${s.consecutiveLosses}`),
-        p.consent?.mode === 'camera' && !s.presage.apiKeyConfigured
-          ? h('div', { class: 'warn' }, 'No Presage API key: cooldowns will use the timer.')
-          : null,
-        s.presage.sdkError
-          ? h('div', { class: 'warn' }, `Presage SDK: ${s.presage.sdkError}`)
-          : null,
-      ];
-      status.replaceChildren(...lines.filter((l): l is HTMLElement => l !== null));
+      barText.textContent =
+        st === 'signed-out' || st === 'wrong-account'
+          ? `${s.identity.message} Games are blocked until then.`
+          : s.identity.message;
+      loginBtn.hidden = st !== 'signed-out';
+
+      identity.dataset.status = st;
+      identityTitle.textContent = verified
+        ? `${s.identity.message}. Play allowed.`
+        : st === 'checking'
+          ? s.identity.message
+          : 'Games are blocked.';
+      identityDetail.textContent = verified || st === 'checking' ? '' : ` ${s.identity.message}`;
+
+      account.textContent = `@${p.username ?? '?'}`;
+      watchDot.className = `dot ${s.lichess.status}`;
+      watcher.textContent = s.lichess.message ?? s.lichess.status;
+      mode.textContent = p.consent?.mode === 'camera' ? 'Camera between games' : 'Timer only';
+      baseline.textContent = p.baseline ? `${p.baseline.bpm} bpm` : 'Not set';
+      losses.textContent = String(s.consecutiveLosses);
+      recalibrate.textContent =
+        p.consent?.mode === 'camera' ? 'Recalibrate (1 min)' : 'Use the camera (1-min check-in)';
+      const warn = (text: string): HTMLElement => h('p', { class: 'warn' }, text);
+      warnings.replaceChildren(
+        ...(p.consent?.mode === 'camera' && !s.presage.apiKeyConfigured
+          ? [warn('No Presage API key: cooldowns will use the timer.')]
+          : []),
+        ...(s.presage.sdkError ? [warn(`Presage SDK: ${s.presage.sdkError}`)] : []),
+      );
       if (s.consecutiveLosses !== lastLosses) {
         lastLosses = s.consecutiveLosses;
         void refreshLog();
