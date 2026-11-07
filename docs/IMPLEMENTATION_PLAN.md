@@ -60,6 +60,12 @@ Status legend: [x] done and verified, [~] implemented but not verified, [ ] not 
 - [x] P0: play only with a verified Lichess sign-in as the configured account
       (`/account/info` via the embedded session; logged-out path verified live)
 - [~] P0: signed-in / wrong-account paths (unit-tested; manual test 5)
+- [x] P1: cooldown screen redesign: live bpm vs your band, active unlock path (pulse / waiting
+      / timer) with the reason, progress rows; screenshots in `docs/screenshots/`
+- [x] P2: side panel (identity card, labelled facts, sections), calibration idle/progress states
+- [x] P3: app icon (`build/icon.svg`, `npm run icon`), app name, dev dock icon
+- [ ] P4: SDK exposes a real breathing rate (`MetricType.BREATHING_RATE`); not wired yet
+      because it is unverified on a real face. The fixed 4/6 guide stays, labelled as a guide
 
 ## M6: Log, delete-all, restart
 
@@ -76,7 +82,7 @@ Status legend: [x] done and verified, [~] implemented but not verified, [ ] not 
 3. [ ] Self-experiment: about 30 real games; export the log for the write-up (export ready)
 4. [ ] "You after losses" summary (average pulse change, time to unlock) above the log
 5. [ ] Breathing-driven visual (SDK breathing trace) instead of the fixed 4/6 animation
-6. [ ] App icon, README screenshots/GIF, demo video
+6. [~] App icon and cooldown screenshots done; README GIF, demo video
 7. [ ] DEV post (template sections incl. Consent and Data Handling)
 8. [ ] Signed/notarized DMG (needs Apple Developer identity), or document unsigned run steps
 

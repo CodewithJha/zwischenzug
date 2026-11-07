@@ -39,7 +39,8 @@ src/
       identity.ts    Who is signed in to the embedded session (session.fetch + cookie watch)
       lock.ts        webRequest blocker for the Lichess session
     log.ts           electron-log
-    smoke.ts         Scripted verification mode (ZZ_SMOKE_DIR)
+    smoke.ts         Scripted verification mode (ZZ_SMOKE_DIR; Chromium fake camera, never
+                     the real one)
   preload/index.ts  contextBridge: window.zz (typed ZzApi) + the SDK's preload bridge
   renderer/         App UI, plain TypeScript + DOM (no framework)
     main.ts          Screen router driven by main's AppSnapshot

@@ -17,6 +17,13 @@ Built for the [DEV.to Presage SmartSpectra SDK Challenge 2026](https://dev.to/ch
 > any condition, and it does not claim to detect "tilt". It only compares your current
 > pulse reading with your own baseline.
 
+![Cooldown screen: pulse path, 9 of 15 seconds near baseline](docs/screenshots/cooldown-recovering.png)
+
+The cooldown screen says which unlock path is active: **by pulse** (green; live bpm against
+your band) or **by timer** (amber; with the reason: timer-only mode, no baseline, no API key,
+SDK error, or no face/signal). More in [docs/screenshots/](docs/screenshots/). These
+screenshots use simulated readings and a placeholder camera image.
+
 ## Status
 
 See [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md) for milestone status and
@@ -100,6 +107,7 @@ the app shows it and falls back to the timer.
 | `npm run check`                   | typecheck + lint + format check + tests                           |
 | `npm run presage:check`           | Check the Presage key from env/`.env` without a camera            |
 | `npm run dist:dir`                | Unsigned unpacked macOS app in `release/`                         |
+| `npm run icon`                    | Regenerate `build/icon.png` and `icon.icns` from `build/icon.svg` |
 | `npm run dist:mac`                | macOS arm64 DMG (needs signing identity for distribution)         |
 
 ## Configuration
@@ -167,6 +175,11 @@ Defaults live in [`src/core/config.ts`](src/core/config.ts). Override them with 
   10-reading calibration minimum is a guess and configurable.
 - **Pulse after casual losses may barely rise.** The minimum wait and timer still apply. The
   local log lets you see your own numbers.
+- **Dev builds show "Electron" in the menu bar.** The bold app-menu title comes from the
+  Electron bundle; the packaged app is named Zwischenzug. A Presage key saved in the app before
+  the rename may need saving again (its keychain entry is tied to the app name);
+  `PRESAGE_API_KEY` in `.env` is unaffected.
+- **Breathing guide is a fixed pace** (in 4, out 6), not a measurement.
 - Only Lichess. Chess.com is a planned second `GameSource`.
 - Tested on macOS Apple Silicon only.
 
