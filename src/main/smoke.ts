@@ -16,7 +16,12 @@ export function runSmokeIfRequested(win: BrowserWindow, view: WebContentsView): 
   // Scripted runs must not be steered by (or steal) the real mouse.
   win.setIgnoreMouseEvents(true);
   win.blur();
-  const steps = JSON.parse(process.env.ZZ_SMOKE_STEPS ?? '[]') as { name: string; js: string }[];
+  const steps = JSON.parse(process.env.ZZ_SMOKE_STEPS ?? '[]') as {
+    name: string;
+    js: string;
+    target?: 'app' | 'lichess';
+    waitMs?: number;
+  }[];
   const wait = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
   const report: Record<string, unknown>[] = [];
 
@@ -46,8 +51,10 @@ export function runSmokeIfRequested(win: BrowserWindow, view: WebContentsView): 
     await wait(2500);
     await capture('start');
     for (const s of steps) {
+      if (s.waitMs) await wait(s.waitMs);
       try {
-        const result: unknown = await win.webContents.executeJavaScript(s.js);
+        const wc = s.target === 'lichess' ? view.webContents : win.webContents;
+        const result: unknown = await wc.executeJavaScript(s.js);
         report.push({ step: `${s.name}:result`, result });
       } catch (err) {
         report.push({ step: `${s.name}:error`, error: String(err) });

@@ -4,6 +4,8 @@ import { IPC } from '../shared/ipc';
 import { freshState, parseLog, parseState } from '../core/persisted';
 import { loadConfig } from './config';
 import { registerIpc } from './ipc';
+import { installRequestLock } from './lichess/lock';
+import { LichessGameSource } from './lichess/source';
 import { createLichessView } from './lichess/view';
 import { logger } from './log';
 import { getPresageKey } from './secrets';
@@ -39,6 +41,23 @@ app.whenReady().then(() => {
 
   const win = createAppWindow(() => session.cameraAllowed);
   const view = createLichessView(win, config.lichess.origin);
+  installRequestLock(view.webContents.session, () => session.locked);
+
+  const games = new LichessGameSource(config.lichess, {
+    finished: (game) => session.gameFinished(game),
+    status: (status) => session.setLichessStatus(status),
+  });
+  const noteUrl = (_e: unknown, url: string): void => games.noteUrl(url);
+  view.webContents.on('did-navigate', noteUrl);
+  view.webContents.on('did-navigate-in-page', noteUrl);
+
+  let watched: string | null = null;
+  const syncGameSource = (): void => {
+    if (session.username === watched) return;
+    watched = session.username;
+    if (watched) games.start(watched);
+    else games.stop();
+  };
 
   const render = (): void => {
     const showLichess = session.screen === 'playing';
@@ -47,9 +66,11 @@ app.whenReady().then(() => {
     view.setVisible(showLichess);
     if (!win.webContents.isLoading()) win.webContents.send(IPC.snapshot, session.snapshot());
   };
+  session.onChange(syncGameSource);
   session.onChange(render);
   win.on('resize', render);
   win.webContents.on('did-finish-load', render);
+  syncGameSource();
   render();
 
   const ticker = setInterval(() => session.tick(), 1000);
