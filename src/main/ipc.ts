@@ -39,6 +39,7 @@ export function registerIpc(
   config: Config,
   diagnostics: () => DiagnosticsInfo,
   openLichessLogin: () => void,
+  retryLichess: () => void,
 ): void {
   const handle = (
     channel: string,
@@ -75,6 +76,14 @@ export function registerIpc(
     (): Result => {
       if (session.screen !== 'playing') return { ok: false, error: 'Not available right now.' };
       openLichessLogin();
+      return { ok: true };
+    },
+    denied,
+  );
+  handle(
+    IPC.retryLichess,
+    (): Result => {
+      retryLichess();
       return { ok: true };
     },
     denied,

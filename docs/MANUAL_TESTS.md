@@ -64,6 +64,11 @@ The logged-out case is verified by a smoke run. The signed-in cases need your ac
    out and sign in to Lichess as @you to play."; no game starts.
 5. Turn Wi-Fi off and wait up to a minute: the bar says it could not check the sign-in. Turn
    Wi-Fi on: it clears within about 10 s.
+6. Wi-Fi off at launch: quit, turn Wi-Fi off, launch. The Lichess area says "Couldn't reach
+   lichess.org. Retrying in Ns…" with a **Retry now** button (also reachable with Tab), and
+   the bar says the sign-in could not be checked. Turn Wi-Fi on: Lichess appears within a few
+   seconds (at once if macOS reports the network back, otherwise at the next retry or on
+   **Retry now**). The log shows `lichess loaded after N failed attempt(s)`.
 
 ## 6. Real cooldown
 

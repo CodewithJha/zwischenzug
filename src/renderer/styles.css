@@ -62,6 +62,25 @@ body[data-screen='playing'] #app {
   color: var(--text);
 }
 
+.offline-notice {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: calc(100vw - var(--panel-width));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 16px;
+  text-align: center;
+}
+
+.signin-bar:not([hidden]) ~ .offline-notice {
+  top: var(--bar-height);
+}
+
 .screen {
   max-width: 640px;
   margin: 0 auto;

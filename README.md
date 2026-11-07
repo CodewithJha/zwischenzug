@@ -168,6 +168,10 @@ Defaults live in [`src/core/config.ts`](src/core/config.ts). Override them with 
   change without notice. The primary lock (hiding the Lichess view) does not depend on them.
   The sign-in check uses `/account/info`, an endpoint built for Lichess's old mobile app; if
   Lichess removes or changes it, play stays blocked (fail closed) and the bar says why.
+- **lichess.org unreachable.** If the Lichess page fails to load (offline, timeout), the app
+  shows "Couldn't reach lichess.org" with a **Retry now** button and retries after 2 s, 5 s,
+  10 s, then every 30 s, and at once when the network comes back. A load that hangs on a very
+  slow connection is not cut short; it shows "Retrying…" until Chromium gives up or it loads.
 - **Sign-in check latency.** Sign-out and account switches are caught at once (login cookie
   change); a session that expires on the server side is caught within a minute.
 - **Pulse measurement unverified here.** Time to first reading, how often readings arrive, and

@@ -26,6 +26,7 @@ const api: ZzApi = {
   getDiagnostics: () => ipcRenderer.invoke(IPC.getDiagnostics),
   exportLog: (format) => ipcRenderer.invoke(IPC.exportLog, format),
   openLichessLogin: () => ipcRenderer.invoke(IPC.openLichessLogin),
+  retryLichess: () => ipcRenderer.invoke(IPC.retryLichess),
   log: (level, message) => ipcRenderer.send(IPC.log, level, message),
 };
 

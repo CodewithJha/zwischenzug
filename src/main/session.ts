@@ -34,6 +34,7 @@ export class Session {
   private recalibrating = false;
   private diagnostics = false;
   private lichess: AppSnapshot['lichess'] = { status: 'idle', message: null };
+  private lichessPage: AppSnapshot['lichessPage'] = { status: 'ok' };
   /** In memory only: never trust a sign-in from a previous run. */
   private identity: IdentityObservation = { kind: 'checking' };
   private readonly rules: CooldownRules;
@@ -115,6 +116,7 @@ export class Session {
       cooldown:
         engine.phase === 'cooldown' ? cooldownView(engine.cooldown, this.now(), this.rules) : null,
       lichess: this.lichess,
+      lichessPage: this.lichessPage,
       identity: this.identityView(),
       presage: { ...this.deps.presageStatus(), apiKeyConfigured: this.deps.hasApiKey() },
       settings: {
@@ -179,6 +181,15 @@ export class Session {
 
   setLichessStatus(status: AppSnapshot['lichess']): void {
     this.lichess = status;
+    this.emit();
+  }
+
+  get lichessPageFailed(): boolean {
+    return this.lichessPage.status === 'failed';
+  }
+
+  setLichessPage(page: AppSnapshot['lichessPage']): void {
+    this.lichessPage = page;
     this.emit();
   }
 

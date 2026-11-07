@@ -71,6 +71,8 @@ export interface AppSnapshot {
   consecutiveLosses: number;
   cooldown: CooldownView | null;
   lichess: { status: 'idle' | 'watching' | 'error'; message: string | null };
+  /** Whether the embedded lichess.org page loaded; while failed, the view is hidden. */
+  lichessPage: { status: 'ok' } | { status: 'failed'; error: string; retryAt: number };
   identity: IdentityView;
   presage: { sdkLoaded: boolean; sdkError: string | null; apiKeyConfigured: boolean };
   settings: {

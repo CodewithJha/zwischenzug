@@ -26,6 +26,7 @@ const snap = (over: Partial<AppSnapshot> = {}, c: CooldownView = cooldown()): Ap
   consecutiveLosses: 1,
   cooldown: c,
   lichess: { status: 'watching', message: null },
+  lichessPage: { status: 'ok' },
   identity: { status: 'verified', signedInAs: 'u', message: '' },
   presage: { sdkLoaded: true, sdkError: null, apiKeyConfigured: true },
   settings: {

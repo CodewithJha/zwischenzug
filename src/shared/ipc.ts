@@ -25,6 +25,7 @@ export const IPC = {
   getDiagnostics: 'zz:get-diagnostics',
   exportLog: 'zz:export-log',
   openLichessLogin: 'zz:open-lichess-login',
+  retryLichess: 'zz:retry-lichess',
   log: 'zz:log',
 } as const;
 
@@ -55,5 +56,7 @@ export interface ZzApi {
   exportLog(format: 'csv' | 'json'): Promise<Result>;
   /** Shows the Lichess sign-in page in the embedded view. */
   openLichessLogin(): Promise<Result>;
+  /** Retries loading lichess.org now after a failed load (no-op otherwise). */
+  retryLichess(): Promise<Result>;
   log(level: 'info' | 'warn' | 'error', message: string): void;
 }

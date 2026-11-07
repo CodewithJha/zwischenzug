@@ -65,7 +65,9 @@ app.whenReady().then(() => {
     presage = status;
     session.notify();
   });
-  const view = createLichessView(win, config.lichess.origin);
+  const { view, retryLoad } = createLichessView(win, config.lichess.origin, (page) =>
+    session.setLichessPage(page),
+  );
   installRequestLock(view.webContents.session, () => session.playBlocked);
   const identity = watchLichessIdentity(view.webContents.session, config.lichess.origin, (obs) =>
     session.setIdentity(obs),
@@ -83,6 +85,7 @@ app.whenReady().then(() => {
       packaged: app.isPackaged,
     }),
     () => void view.webContents.loadURL(`${config.lichess.origin}/login`),
+    retryLoad,
   );
 
   const games = new LichessGameSource(config.lichess, {
@@ -105,7 +108,8 @@ app.whenReady().then(() => {
   };
 
   const render = (): void => {
-    const showLichess = session.screen === 'playing';
+    // A failed load leaves a blank page; hide it so the app's "couldn't reach" notice shows.
+    const showLichess = session.screen === 'playing' && !session.lichessPageFailed;
     const [width, height] = win.getContentSize() as [number, number];
     // Room above Lichess for the app's "sign in as @user" bar while play is not allowed.
     const top = showLichess && !session.identityVerified ? BAR_HEIGHT : 0;

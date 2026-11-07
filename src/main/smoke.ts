@@ -67,5 +67,16 @@ export function runSmokeIfRequested(win: BrowserWindow, view: WebContentsView): 
     logger.info(`smoke report written to ${dir}`);
     app.quit();
   };
+  // `ZZ_SMOKE_OFFLINE_MS`: lichess.org is unreachable (an unroutable proxy) for that long.
+  const offlineMs = app.isPackaged ? 0 : Number(process.env.ZZ_SMOKE_OFFLINE_MS ?? 0);
+  if (offlineMs > 0) {
+    const ses = view.webContents.session;
+    void ses.setProxy({ proxyRules: 'http://127.0.0.1:9' }).then(() => {
+      void view.webContents.loadURL('https://lichess.org/').catch(() => undefined);
+      setTimeout(() => void ses.setProxy({ mode: 'direct' }), offlineMs);
+      void run();
+    });
+    return;
+  }
   view.webContents.once('did-finish-load', () => void run());
 }

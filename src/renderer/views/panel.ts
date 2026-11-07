@@ -94,6 +94,28 @@ export function panelView(): View {
   );
   const bar = h('div', { class: 'signin-bar', role: 'status' }, barText, loginBtn);
 
+  // Fills the Lichess area (main hides the view) while lichess.org fails to load.
+  // The ticking countdown is hidden from screen readers so it is not announced every second.
+  const countdownText = h('span', { 'aria-hidden': 'true' });
+  const retry = (): void => void zz().retryLichess();
+  const offline = h(
+    'div',
+    { class: 'offline-notice', role: 'status' },
+    h('p', {}, "Couldn't reach lichess.org. ", countdownText),
+    h('button', { class: 'primary', onclick: retry }, 'Retry now'),
+  );
+  let retryAt: number | null = null;
+  const showCountdown = (): void => {
+    if (retryAt === null) return;
+    const sec = Math.ceil((retryAt - Date.now()) / 1000);
+    countdownText.textContent = sec > 0 ? `Retrying in ${sec}s…` : 'Retrying…';
+  };
+  const countdown = setInterval(showCountdown, 1000);
+  const onOnline = (): void => {
+    if (retryAt !== null) retry();
+  };
+  window.addEventListener('online', onOnline);
+
   const recalibrate = h(
     'button',
     { onclick: () => void zz().recalibrate() },
@@ -103,6 +125,7 @@ export function panelView(): View {
     'aside',
     { class: 'panel', 'aria-label': 'Zwischenzug' },
     bar,
+    offline,
     h(
       'header',
       { class: 'panel-head' },
@@ -157,6 +180,9 @@ export function panelView(): View {
           ? `${s.identity.message} Games are blocked until then.`
           : s.identity.message;
       loginBtn.hidden = st !== 'signed-out';
+      retryAt = s.lichessPage.status === 'failed' ? s.lichessPage.retryAt : null;
+      offline.hidden = retryAt === null;
+      showCountdown();
 
       identity.dataset.status = st;
       identityTitle.textContent = verified
@@ -186,6 +212,9 @@ export function panelView(): View {
         void refreshLog();
       }
     },
-    destroy: () => undefined,
+    destroy: () => {
+      clearInterval(countdown);
+      window.removeEventListener('online', onOnline);
+    },
   };
 }
