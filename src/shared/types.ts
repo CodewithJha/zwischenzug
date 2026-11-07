@@ -33,7 +33,7 @@ export interface GameLogEntry {
   } | null;
 }
 
-export type Screen = 'consent' | 'setup' | 'calibration' | 'playing' | 'cooldown';
+export type Screen = 'consent' | 'setup' | 'calibration' | 'playing' | 'cooldown' | 'diagnostics';
 
 export interface CooldownView {
   gameId: string;
@@ -68,4 +68,15 @@ export interface AppSnapshot {
 export interface PresageRendererConfig {
   apiKey: string;
   enableTelemetry: boolean;
+}
+
+/** Environment facts for the diagnostics screen. Never contains the API key itself. */
+export interface DiagnosticsInfo {
+  apiKeySource: 'env' | 'saved' | null;
+  /** OS camera permission for this app (macOS/Windows), without prompting. */
+  cameraPermission: 'not-determined' | 'granted' | 'denied' | 'restricted' | 'unknown';
+  sdkVersion: string | null;
+  electronVersion: string;
+  platform: string;
+  packaged: boolean;
 }

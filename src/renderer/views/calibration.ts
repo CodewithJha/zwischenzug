@@ -96,6 +96,7 @@ export function calibrationView(provider: BiometricProvider): View {
       { class: 'actions' },
       startBtn,
       h('button', { onclick: () => void zz().giveConsent('timer-only') }, 'Use the timer instead'),
+      h('button', { onclick: () => void zz().setDiagnostics(true) }, 'Presage diagnostics'),
     ),
     error,
   );

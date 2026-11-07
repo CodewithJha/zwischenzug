@@ -5,6 +5,7 @@ import { logger } from './log';
 export interface PresageStatus {
   sdkLoaded: boolean;
   sdkError: string | null;
+  sdkVersion: string | null;
 }
 
 const NATIVE_LIB: Partial<Record<NodeJS.Platform, string>> = {
@@ -28,18 +29,19 @@ export async function initPresage(win: BrowserWindow): Promise<PresageStatus> {
   }
   try {
     // Loading this module loads the native library (koffi), so do it lazily.
-    const { bindSmartSpectraIpc } = await import('@smartspectra/node-sdk/main');
+    const { bindSmartSpectraIpc, SmartSpectraSDK } = await import('@smartspectra/node-sdk/main');
     bindSmartSpectraIpc(win, {
       logger: (level, msg) => logger[level](`[smartspectra] ${msg}`),
     });
-    logger.info('SmartSpectra SDK loaded and bound');
-    return { sdkLoaded: true, sdkError: null };
+    logger.info(`SmartSpectra SDK ${SmartSpectraSDK.version} loaded and bound`);
+    return { sdkLoaded: true, sdkError: null, sdkVersion: SmartSpectraSDK.version };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     logger.error(`SmartSpectra SDK unavailable: ${message}`);
     return {
       sdkLoaded: false,
       sdkError: `SDK could not load on this machine (${message.slice(0, 160)})`,
+      sdkVersion: null,
     };
   }
 }

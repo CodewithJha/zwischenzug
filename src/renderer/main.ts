@@ -4,6 +4,7 @@ import { zz, type View } from './dom';
 import { calibrationView } from './views/calibration';
 import { consentView } from './views/consent';
 import { cooldownView } from './views/cooldown';
+import { diagnosticsView } from './views/diagnostics';
 import { panelView } from './views/panel';
 import { pulseMonitor } from './views/pulse-monitor';
 import { setupView } from './views/setup';
@@ -24,6 +25,7 @@ const VIEWS: Record<Screen, (s: AppSnapshot) => View> = {
         ? pulseMonitor(provider)
         : null,
     ),
+  diagnostics: () => diagnosticsView(provider),
 };
 
 const root = document.getElementById('app') as HTMLElement;

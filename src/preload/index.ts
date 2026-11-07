@@ -22,6 +22,8 @@ const api: ZzApi = {
   setPresageKey: (key) => ipcRenderer.invoke(IPC.setPresageKey, key),
   getLog: () => ipcRenderer.invoke(IPC.getLog),
   deleteAllData: () => ipcRenderer.invoke(IPC.deleteAll),
+  setDiagnostics: (open) => ipcRenderer.invoke(IPC.setDiagnostics, open),
+  getDiagnostics: () => ipcRenderer.invoke(IPC.getDiagnostics),
   log: (level, message) => ipcRenderer.send(IPC.log, level, message),
 };
 

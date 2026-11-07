@@ -3,13 +3,13 @@ import path from 'node:path';
 import { IPC } from '../shared/ipc';
 import { freshState, parseLog, parseState } from '../core/persisted';
 import { loadConfig } from './config';
-import { registerIpc } from './ipc';
+import { cameraPermission, registerIpc } from './ipc';
 import { installRequestLock } from './lichess/lock';
 import { LichessGameSource } from './lichess/source';
 import { createLichessView } from './lichess/view';
 import { logger } from './log';
 import { initPresage, type PresageStatus } from './presage';
-import { getPresageKey } from './secrets';
+import { presageKeySource } from './secrets';
 import { Session } from './session';
 import { runSmokeIfRequested } from './smoke';
 import { JsonFile } from './store';
@@ -24,7 +24,7 @@ if (process.env.ZZ_USER_DATA_DIR) app.setPath('userData', process.env.ZZ_USER_DA
 app.whenReady().then(() => {
   const config = loadConfig();
   const dataDir = app.getPath('userData');
-  let presage: PresageStatus = { sdkLoaded: false, sdkError: 'loading...' };
+  let presage: PresageStatus = { sdkLoaded: false, sdkError: 'loading...', sdkVersion: null };
   const session = new Session({
     config,
     stateFile: new JsonFile(
@@ -36,10 +36,17 @@ app.whenReady().then(() => {
       version: 1 as const,
       games: [],
     })),
-    presageStatus: () => presage,
-    hasApiKey: () => getPresageKey() !== null,
+    presageStatus: () => ({ sdkLoaded: presage.sdkLoaded, sdkError: presage.sdkError }),
+    hasApiKey: () => presageKeySource() !== null,
   });
-  registerIpc(session, config);
+  registerIpc(session, config, () => ({
+    apiKeySource: presageKeySource(),
+    cameraPermission: cameraPermission(),
+    sdkVersion: presage.sdkVersion,
+    electronVersion: process.versions.electron,
+    platform: `${process.platform}-${process.arch}`,
+    packaged: app.isPackaged,
+  }));
 
   const win = createAppWindow(() => session.cameraAllowed);
   void initPresage(win).then((status) => {

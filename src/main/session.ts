@@ -30,6 +30,7 @@ export class Session {
   private state: PersistedState;
   private games: GameLogEntry[];
   private recalibrating = false;
+  private diagnostics = false;
   private lichess: AppSnapshot['lichess'] = { status: 'idle', message: null };
   private readonly rules: CooldownRules;
   private readonly now: () => number;
@@ -68,6 +69,7 @@ export class Session {
     if (!profile.consent) return 'consent';
     if (!profile.username) return 'setup';
     if (engine.phase === 'cooldown') return 'cooldown';
+    if (this.diagnostics) return 'diagnostics';
     if (profile.consent.mode === 'camera' && (!profile.baseline || this.recalibrating)) {
       return 'calibration';
     }
@@ -147,6 +149,16 @@ export class Session {
     return { ok: true };
   }
 
+  /** In-memory only: the diagnostics screen never survives a restart or a loss. */
+  setDiagnostics(open: boolean): Result {
+    if (open && (this.locked || !this.state.profile.consent || !this.state.profile.username)) {
+      return { ok: false, error: 'Diagnostics are not available right now.' };
+    }
+    this.diagnostics = open;
+    this.emit();
+    return { ok: true };
+  }
+
   setLichessStatus(status: AppSnapshot['lichess']): void {
     this.lichess = status;
     this.emit();
@@ -194,6 +206,7 @@ export class Session {
     this.deps.logFile.delete();
     this.state = freshState();
     this.recalibrating = false;
+    this.diagnostics = false;
     this.persist();
     logger.info('all local data deleted');
     this.emit();
@@ -211,6 +224,7 @@ export class Session {
       before.cooldown.firstBpm === null &&
       state.cooldown.firstBpm !== null;
     if (unlock) this.recordUnlock(unlock);
+    if (phaseChanged) this.diagnostics = false;
     if (phaseChanged || firstReading || event.type === 'GAME_FINISHED') this.persist();
     if (phaseChanged) logger.info(`engine: ${before.phase} -> ${state.phase}`);
     this.emit();

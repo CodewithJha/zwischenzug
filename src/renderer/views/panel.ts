@@ -56,6 +56,7 @@ export function panelView(): View {
       'div',
       { class: 'actions' },
       h('button', { onclick: () => void zz().recalibrate() }, 'Recalibrate (1 min)'),
+      h('button', { onclick: () => void zz().setDiagnostics(true) }, 'Presage diagnostics'),
     ),
     h('h2', {}, 'Game log'),
     logList,

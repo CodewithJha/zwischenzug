@@ -1,7 +1,7 @@
 import { ipcMain, systemPreferences, type IpcMainEvent, type IpcMainInvokeEvent } from 'electron';
 import { IPC, type Result } from '../shared/ipc';
 import type { Config } from '../core/config';
-import type { PresageRendererConfig } from '../shared/types';
+import type { DiagnosticsInfo, PresageRendererConfig } from '../shared/types';
 import { logger } from './log';
 import { getPresageKey, savePresageKey } from './secrets';
 import type { Session } from './session';
@@ -20,7 +20,16 @@ function trusted(event: IpcMainEvent | IpcMainInvokeEvent): boolean {
 
 const denied: Result = { ok: false, error: 'untrusted sender' };
 
-export function registerIpc(session: Session, config: Config): void {
+export function cameraPermission(): DiagnosticsInfo['cameraPermission'] {
+  if (process.platform !== 'darwin' && process.platform !== 'win32') return 'unknown';
+  return systemPreferences.getMediaAccessStatus('camera');
+}
+
+export function registerIpc(
+  session: Session,
+  config: Config,
+  diagnostics: () => DiagnosticsInfo,
+): void {
   const handle = (
     channel: string,
     fn: (...args: unknown[]) => unknown,
@@ -49,13 +58,15 @@ export function registerIpc(session: Session, config: Config): void {
   handle(IPC.override, (sentence) => session.override(str(sentence)), denied);
   handle(IPC.getLog, () => session.getLog(), []);
   handle(IPC.deleteAll, () => session.deleteAll(), denied);
+  handle(IPC.setDiagnostics, (open) => session.setDiagnostics(open === true), denied);
+  handle(IPC.getDiagnostics, () => diagnostics(), null);
 
   handle(
     IPC.requestCamera,
     async () => {
       if (!session.cameraAllowed) return false;
       if (process.platform !== 'darwin') return true;
-      const status = systemPreferences.getMediaAccessStatus('camera');
+      const status = cameraPermission();
       if (status === 'granted') return true;
       if (status === 'denied' || status === 'restricted') return false;
       return systemPreferences.askForMediaAccess('camera');

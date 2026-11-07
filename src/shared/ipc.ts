@@ -1,4 +1,10 @@
-import type { AppSnapshot, CameraMode, GameLogEntry, PresageRendererConfig } from './types';
+import type {
+  AppSnapshot,
+  CameraMode,
+  DiagnosticsInfo,
+  GameLogEntry,
+  PresageRendererConfig,
+} from './types';
 
 /** IPC channel names. Kept in one place so main and preload cannot drift. */
 export const IPC = {
@@ -15,6 +21,8 @@ export const IPC = {
   setPresageKey: 'zz:set-presage-key',
   getLog: 'zz:get-log',
   deleteAll: 'zz:delete-all',
+  setDiagnostics: 'zz:set-diagnostics',
+  getDiagnostics: 'zz:get-diagnostics',
   log: 'zz:log',
 } as const;
 
@@ -38,5 +46,8 @@ export interface ZzApi {
   setPresageKey(key: string): Promise<Result>;
   getLog(): Promise<GameLogEntry[]>;
   deleteAllData(): Promise<Result>;
+  /** Opens or closes the SDK diagnostics screen (never during a cooldown). */
+  setDiagnostics(open: boolean): Promise<Result>;
+  getDiagnostics(): Promise<DiagnosticsInfo>;
   log(level: 'info' | 'warn' | 'error', message: string): void;
 }
