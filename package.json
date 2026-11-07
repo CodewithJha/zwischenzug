@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "Privacy-first chess tilt cooldown: after a Lichess loss, your next game unlocks when your pulse is back near baseline.",
-  "license": "MIT",
+  "license": "UNLICENSED",
   "main": "dist/main/index.js",
   "engines": {
     "node": ">=22.12"

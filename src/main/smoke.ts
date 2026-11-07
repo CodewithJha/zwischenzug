@@ -16,7 +16,9 @@ export function runSmokeIfRequested(win: BrowserWindow, view: WebContentsView): 
   // Scripted runs must not be steered by (or steal) the real mouse.
   win.setIgnoreMouseEvents(true);
   win.blur();
-  const steps = JSON.parse(process.env.ZZ_SMOKE_STEPS ?? '[]') as {
+  // Scripted steps evaluate arbitrary JS, so they are a development-only feature.
+  const stepsJson = app.isPackaged ? '[]' : (process.env.ZZ_SMOKE_STEPS ?? '[]');
+  const steps = JSON.parse(stepsJson) as {
     name: string;
     js: string;
     target?: 'app' | 'lichess';

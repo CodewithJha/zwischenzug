@@ -10,9 +10,14 @@ export function apiKeyForm(): HTMLElement {
   const message = h('p', { class: 'muted', role: 'status' });
   const save = async (e: Event): Promise<void> => {
     e.preventDefault();
+    const cleared = input.value.trim() === '';
     const res = await zz().setPresageKey(input.value);
     input.value = '';
-    message.textContent = res.ok ? 'Saved (encrypted with your OS keychain).' : res.error;
+    if (!res.ok) message.textContent = res.error;
+    else
+      message.textContent = cleared
+        ? 'Saved key removed.'
+        : 'Saved (encrypted with your OS keychain).';
   };
   return h(
     'form',

@@ -16,7 +16,8 @@ const URLS = [
 export function installRequestLock(ses: ElectronSession, isLocked: () => boolean): void {
   ses.webRequest.onBeforeRequest({ urls: URLS }, (details, callback) => {
     const cancel = isLocked() && isBlockedRequest(details.method, details.url);
-    if (cancel) logger.info(`lock: blocked ${details.method} ${new URL(details.url).pathname}`);
+    // Debug level: Lichess retries its lobby socket every few seconds while locked.
+    if (cancel) logger.debug(`lock: blocked ${details.method} ${new URL(details.url).pathname}`);
     callback({ cancel });
   });
 }
