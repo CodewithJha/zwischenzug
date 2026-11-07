@@ -1,35 +1,62 @@
 import { app, BrowserWindow, WebContentsView } from 'electron';
-import { writeFile } from 'node:fs/promises';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { logger } from './log';
 
 /**
- * `ZZ_SMOKE_DIR=/tmp/zz npm start` loads the app, waits for Lichess, writes PNG captures
- * of both surfaces plus a JSON report into that directory, then quits. Used for headless-ish
- * verification without screen-recording permissions.
+ * Verification aid. `ZZ_SMOKE_DIR=/tmp/zz npm start` waits for both surfaces to load, then
+ * runs the optional `ZZ_SMOKE_STEPS` (JSON array of {name, js} evaluated in the app page),
+ * capturing PNGs and a JSON report after each step, then quits.
+ * Never active unless the env var is set.
  */
 export function runSmokeIfRequested(win: BrowserWindow, view: WebContentsView): void {
   const dir = process.env.ZZ_SMOKE_DIR;
   if (!dir) return;
-  const finish = async (): Promise<void> => {
-    await new Promise((r) => setTimeout(r, 4000));
-    const [appImg, lichessImg] = await Promise.all([
-      win.webContents.capturePage(),
-      view.webContents.capturePage(),
-    ]);
-    await writeFile(path.join(dir, 'app.png'), appImg.toPNG());
-    await writeFile(path.join(dir, 'lichess.png'), lichessImg.toPNG());
-    const report = {
-      lichessUrl: view.webContents.getURL(),
-      lichessTitle: view.webContents.getTitle(),
-      lichessVisible: view.getVisible(),
+  mkdirSync(dir, { recursive: true });
+  // Scripted runs must not be steered by (or steal) the real mouse.
+  win.setIgnoreMouseEvents(true);
+  win.blur();
+  const steps = JSON.parse(process.env.ZZ_SMOKE_STEPS ?? '[]') as { name: string; js: string }[];
+  const wait = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
+  const report: Record<string, unknown>[] = [];
+
+  const capture = async (name: string): Promise<void> => {
+    await wait(1500);
+    writeFileSync(path.join(dir, `${name}-app.png`), (await win.webContents.capturePage()).toPNG());
+    if (view.getVisible()) {
+      writeFileSync(
+        path.join(dir, `${name}-lichess.png`),
+        (await view.webContents.capturePage()).toPNG(),
+      );
+    }
+    report.push({
+      step: name,
+      screen: await win.webContents.executeJavaScript('document.body.dataset.screen'),
       appText: await win.webContents.executeJavaScript('document.body.innerText'),
-      lichessHasPreloadApi: await view.webContents.executeJavaScript('typeof window.zz'),
-      appHasPreloadApi: await win.webContents.executeJavaScript('typeof window.zz'),
-    };
-    await writeFile(path.join(dir, 'report.json'), JSON.stringify(report, null, 2));
+      lichessVisible: view.getVisible(),
+      lichessUrl: view.webContents.getURL(),
+      lichessHasZzApi: await view.webContents.executeJavaScript('typeof window.zz'),
+      lichessHasSdkBridge: await view.webContents.executeJavaScript(
+        'typeof window.__smartspectraBridge',
+      ),
+    });
+  };
+
+  const run = async (): Promise<void> => {
+    await wait(2500);
+    await capture('start');
+    for (const s of steps) {
+      try {
+        const result: unknown = await win.webContents.executeJavaScript(s.js);
+        report.push({ step: `${s.name}:result`, result });
+      } catch (err) {
+        report.push({ step: `${s.name}:error`, error: String(err) });
+      }
+      await capture(s.name);
+    }
+    writeFileSync(path.join(dir, 'report.json'), JSON.stringify(report, null, 2));
     logger.info(`smoke report written to ${dir}`);
     app.quit();
   };
-  view.webContents.once('did-finish-load', () => void finish());
+  view.webContents.once('did-finish-load', () => void run());
 }
