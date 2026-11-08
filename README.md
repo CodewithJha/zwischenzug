@@ -162,6 +162,9 @@ Defaults live in [`src/core/config.ts`](src/core/config.ts). Override them with 
 - **SDK start pauses the main process.** Starting a Presage session blocks for about 2-5 s
   (measured with the main-process SDK), so the app can feel briefly unresponsive when the
   check-in, diagnostics or a cooldown starts the camera.
+- **Quit waits for the camera session.** Quitting while Presage is measuring waits for the
+  native session to shut down (measured up to ~3 s, capped at 10 s); quitting sooner aborts
+  the process.
 - **Detection latency.** Game end is detected from Lichess's public game stream (sub-second to
   a few seconds). A click on "rematch"/"new opponent" faster than that can still go through.
 - **Lichess internals.** The request-blocking layer uses Lichess URL paths and sockets that can

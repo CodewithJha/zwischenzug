@@ -3,6 +3,7 @@ import path from 'node:path';
 import { steadyClock } from '../core/clock';
 import { IPC } from '../shared/ipc';
 import { freshState, parseLog, parseState } from '../core/persisted';
+import { quitAfter } from '../core/quit-guard';
 import { loadConfig } from './config';
 import { cameraPermission, registerIpc } from './ipc';
 import { watchLichessIdentity } from './lichess/identity';
@@ -10,7 +11,7 @@ import { installRequestLock } from './lichess/lock';
 import { LichessGameSource } from './lichess/source';
 import { createLichessView } from './lichess/view';
 import { logger } from './log';
-import { initPresage, type PresageStatus } from './presage';
+import { initPresage, shutdownPresage, type PresageStatus } from './presage';
 import { presageKeySource } from './secrets';
 import { Session } from './session';
 import { runSmokeIfRequested } from './smoke';
@@ -21,6 +22,8 @@ import { createAppWindow } from './window';
 const PANEL_WIDTH = 380;
 /** Height of the sign-in bar above Lichess (matches --bar-height in styles.css). */
 const BAR_HEIGHT = 56;
+/** Longest a quit waits for the Presage native session to tear down (measured ~2.7 s). */
+const QUIT_DRAIN_MS = 10_000;
 
 // Before ready and before userData is resolved: menu items and the default data folder use it.
 app.setName('Zwischenzug');
@@ -139,6 +142,7 @@ app.whenReady().then(() => {
 });
 
 app.on('window-all-closed', () => app.quit());
+quitAfter(app, shutdownPresage, QUIT_DRAIN_MS);
 
 app.on('web-contents-created', (_e, contents) => {
   contents.on('will-attach-webview', (event) => event.preventDefault());

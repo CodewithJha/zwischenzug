@@ -79,7 +79,9 @@ The logged-out case is verified by a smoke run. The signed-in cases need your ac
 3. Wait without overriding. It unlocks after at least 60 s once your pulse stays at or below
    the band for 15 s. The log row must say `(pulse settled)`.
 4. Lose again, then quit (Cmd+Q) during the cooldown and relaunch: still locked, the minimum
-   pause continues where it was.
+   pause continues where it was. Quit may take up to a few seconds while the camera session
+   shuts down; it must exit cleanly (no "quit unexpectedly" dialog, no `FATAL ERROR` in the
+   terminal).
 5. Lose again and close the laptop lid for 2 minutes: after waking, the time asleep counts.
 6. **Export CSV** in the panel and open the file.
 
