@@ -14,13 +14,10 @@ export type UnlockPath =
 export function unlockPath(s: AppSnapshot, provider: ProviderState | null): UnlockPath {
   const c = s.cooldown;
   if (s.profile.consent?.mode !== 'camera') {
-    return { kind: 'timer', reason: 'You chose timer only, so the camera stays off.' };
+    return { kind: 'timer', reason: 'You chose timer only.' };
   }
   if (c?.baselineBpm == null) {
-    return {
-      kind: 'timer',
-      reason: 'No baseline yet. A one-minute check-in enables pulse unlock.',
-    };
+    return { kind: 'timer', reason: 'No baseline yet. Recalibrate to unlock by pulse.' };
   }
   if (!s.presage.sdkLoaded) {
     return { kind: 'timer', reason: s.presage.sdkError ?? 'The Presage SDK is not available.' };
@@ -30,8 +27,8 @@ export function unlockPath(s: AppSnapshot, provider: ProviderState | null): Unlo
   if (c.signalFresh) return { kind: 'pulse' };
   if (provider?.kind === 'measuring') {
     return provider.ok
-      ? { kind: 'waiting', detail: 'Waiting for a steady reading. Stay relaxed.' }
+      ? { kind: 'waiting', detail: 'Hold still, facing the light.' }
       : { kind: 'timer', reason: provider.hint ?? 'No pulse reading right now.' };
   }
-  return { kind: 'waiting', detail: 'Starting the camera...' };
+  return { kind: 'waiting', detail: 'Starting the camera…' };
 }

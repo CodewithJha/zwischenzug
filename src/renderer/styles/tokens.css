@@ -18,6 +18,7 @@
   /* Accent: live pulse, near-baseline, focus. Use sparingly. */
   --c-accent: #4cf28c;
   --c-accent-weak: rgb(76 242 140 / 0.14);
+  --c-accent-band: rgb(76 242 140 / 0.3);
 
   /* Only where genuinely needed */
   --c-warn: #c9ad74;

@@ -1,0 +1,230 @@
+/* Cooldown: one status line, one big number, one meter, one secondary action. */
+.cooldown {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  min-height: 100vh;
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: var(--s-6) var(--s-7);
+}
+
+.cd-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--camera-w);
+  gap: var(--s-8);
+  align-items: start;
+  align-self: center;
+  padding-block: var(--s-7);
+}
+
+.cd-body:has(> .camera[hidden]) {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.cd-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s-5);
+  max-width: 600px;
+}
+
+.cd-head {
+  display: grid;
+  gap: var(--s-2);
+  padding-bottom: var(--s-3);
+}
+
+.cd-rule,
+.cd-note {
+  color: var(--c-fg-2);
+}
+
+.cd-note {
+  color: var(--c-fg);
+}
+
+/* The number */
+.readout {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-3);
+  margin-top: calc(var(--s-2) * -1);
+}
+
+.readout-value {
+  font-family: var(--font-mono);
+  font-size: var(--fs-display);
+  font-weight: 300;
+  font-stretch: 87.5%;
+  line-height: 1;
+  letter-spacing: var(--tracking-display);
+  transition: color var(--dur-med) var(--ease-out);
+}
+
+.readout-value.empty {
+  color: var(--c-fg-3);
+}
+
+.cooldown[data-band='in'] .readout-value {
+  color: var(--c-accent);
+}
+
+.readout-unit {
+  color: var(--c-fg-2);
+  font-size: var(--fs-lg);
+}
+
+/* Gauge */
+.gauge {
+  display: grid;
+  gap: var(--s-2);
+}
+
+.gauge-track {
+  position: relative;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--c-line);
+}
+
+.gauge-band {
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  width: var(--x);
+  border-radius: 3px 0 0 3px;
+  background: var(--c-accent-band);
+  box-shadow: inset -1px 0 0 var(--c-accent);
+}
+
+.gauge-tick {
+  position: absolute;
+  top: -5px;
+  left: var(--x);
+  width: 1px;
+  height: 16px;
+  background: var(--c-fg-2);
+}
+
+.gauge-tick.loss {
+  background: var(--c-fg-3);
+}
+
+.gauge-now-rail {
+  position: absolute;
+  inset: 0;
+  transform: translateX(var(--x));
+  transition: transform var(--dur-med) var(--ease-out);
+}
+
+.gauge-now {
+  position: absolute;
+  top: 50%;
+  left: -7px;
+  width: 14px;
+  height: 14px;
+  margin-top: -7px;
+  border-radius: 50%;
+  background: var(--c-fg);
+  box-shadow: 0 0 0 3px var(--c-bg);
+}
+
+.cooldown[data-band='in'] .gauge-now {
+  background: var(--c-accent);
+}
+
+.gauge-labels {
+  position: relative;
+  height: 1.5em;
+  color: var(--c-fg-3);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  font-stretch: 87.5%;
+}
+
+.gauge-label {
+  position: absolute;
+  left: var(--x);
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.gauge-label[data-edge='end'] {
+  transform: translateX(-100%);
+}
+
+.cd-foot {
+  color: var(--c-fg-3);
+  font-size: var(--fs-sm);
+}
+
+/* Footer: breathing pace and the override */
+.cd-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-4);
+  padding-top: var(--s-4);
+  border-top: var(--hairline);
+}
+
+.breathe {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  color: var(--c-fg-2);
+  font-size: var(--fs-sm);
+}
+
+.breathe-dot {
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--c-line-strong);
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--c-fg-2) 0 45%, transparent 47%);
+  animation: breathe 10s var(--ease-out) infinite;
+}
+
+/* 4 s in, 6 s out */
+@keyframes breathe {
+  0%,
+  100% {
+    transform: scale(0.55);
+  }
+
+  40% {
+    transform: scale(1);
+  }
+}
+
+.override[open] {
+  flex-basis: 100%;
+}
+
+.override form {
+  display: grid;
+  gap: var(--s-3);
+  max-width: 600px;
+  padding-top: var(--s-4);
+}
+
+.sentence {
+  margin: 0;
+  padding: var(--s-3) var(--s-4);
+  border: var(--hairline);
+  border-radius: var(--r-sm);
+  background: var(--c-surface);
+  color: var(--c-fg);
+  user-select: text;
+}
+
+@media (width < 1120px) {
+  .cooldown {
+    padding-inline: var(--s-6);
+  }
+
+  .cd-body {
+    gap: var(--s-6);
+  }
+}
