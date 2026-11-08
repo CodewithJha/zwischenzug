@@ -1,7 +1,8 @@
 import { computeBaseline } from '../../core/pulse';
 import type { AppSnapshot } from '../../shared/types';
 import type { BiometricProvider } from '../biometrics/provider';
-import { formatSec, h, zz, type View } from '../dom';
+import { h, zz, type View } from '../dom';
+import { formatSec } from '../format';
 import { apiKeyForm } from './api-key';
 
 /** One-minute check-in: collects stable pulse readings and saves their median as baseline. */

@@ -1,0 +1,385 @@
+/* Shared components: one vocabulary for every screen. */
+
+/* Wordmark and top bar */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-4);
+  padding-bottom: var(--s-4);
+  border-bottom: var(--hairline);
+  font-size: var(--fs-sm);
+  color: var(--c-fg-2);
+}
+
+.wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  color: var(--c-fg);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-tight);
+}
+
+/* A 2x2 board square: the only ornament in the app. */
+.wordmark::before {
+  content: '';
+  width: 10px;
+  height: 10px;
+  border: 1px solid var(--c-fg);
+  background: conic-gradient(
+    var(--c-fg) 0 25%,
+    transparent 0 50%,
+    var(--c-fg) 0 75%,
+    transparent 0
+  );
+}
+
+/* Buttons */
+button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-2);
+  min-height: var(--control-h);
+  padding: 0 var(--s-4);
+  border: var(--hairline-strong);
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--c-fg);
+  font: inherit;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+
+button:hover:not(:disabled) {
+  background: var(--c-hover);
+}
+
+button:active:not(:disabled) {
+  background: var(--c-raised);
+}
+
+button:disabled {
+  color: var(--c-fg-3);
+  border-color: var(--c-line);
+  cursor: not-allowed;
+}
+
+button.primary {
+  border-color: var(--c-fg);
+  background: var(--c-fg);
+  color: var(--c-on-fg);
+}
+
+button.primary:hover:not(:disabled) {
+  background: var(--c-fg-2);
+  border-color: var(--c-fg-2);
+}
+
+button.primary:disabled {
+  background: var(--c-raised);
+  border-color: var(--c-line);
+  color: var(--c-fg-3);
+}
+
+/* Text-only button for secondary, low-emphasis actions */
+button.quiet {
+  min-height: auto;
+  padding: var(--s-1) 0;
+  border: 0;
+  color: var(--c-fg-2);
+  font-weight: var(--fw-regular);
+  text-decoration: underline;
+  text-decoration-color: var(--c-line-strong);
+  text-underline-offset: 3px;
+}
+
+button.quiet:hover:not(:disabled) {
+  background: transparent;
+  color: var(--c-fg);
+  text-decoration-color: var(--c-fg-2);
+}
+
+button.quiet.danger:hover,
+button.quiet.danger.armed {
+  color: var(--c-danger);
+  text-decoration-color: var(--c-danger);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-3);
+}
+
+/* Form fields */
+label,
+.label {
+  display: block;
+  color: var(--c-fg-2);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+}
+
+input {
+  width: 100%;
+  min-height: var(--control-h);
+  padding: 0 var(--s-3);
+  border: var(--hairline-strong);
+  border-radius: var(--r-sm);
+  background: var(--c-surface);
+  color: var(--c-fg);
+  font: inherit;
+  font-size: var(--fs-md);
+}
+
+input::placeholder {
+  color: var(--c-fg-3);
+}
+
+input:focus-visible {
+  outline-offset: 0;
+  border-color: var(--c-accent);
+}
+
+.field {
+  display: grid;
+  gap: var(--s-2);
+}
+
+.input-row {
+  display: flex;
+  gap: var(--s-2);
+}
+
+.field-help {
+  color: var(--c-fg-3);
+  font-size: var(--fs-xs);
+}
+
+.message {
+  color: var(--c-fg-2);
+  font-size: var(--fs-sm);
+}
+
+.message:empty,
+.error:empty {
+  display: none;
+}
+
+.error {
+  color: var(--c-danger);
+  font-size: var(--fs-sm);
+}
+
+/* Status dot: neutral by default, accent when live, warn only for blocked/failed states */
+.dot {
+  flex: none;
+  width: var(--dot);
+  height: var(--dot);
+  border-radius: 50%;
+  background: var(--c-fg-3);
+}
+
+.dot.live {
+  background: var(--c-accent);
+}
+
+.dot.warn {
+  background: var(--c-warn);
+}
+
+.dot.idle {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--c-fg-3);
+}
+
+/* One status line: dot, short title, plain detail */
+.status {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-2);
+  font-size: var(--fs-md);
+  color: var(--c-fg-2);
+}
+
+.status .dot {
+  align-self: center;
+}
+
+.status strong {
+  color: var(--c-fg);
+  font-weight: var(--fw-semibold);
+}
+
+/* Meter: label + value over a thin track. Wraps a native <progress> for assistive tech. */
+.meter {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  row-gap: var(--s-2);
+  font-size: var(--fs-sm);
+}
+
+.meter-label {
+  color: var(--c-fg-2);
+}
+
+.meter-value {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  font-stretch: 87.5%;
+  color: var(--c-fg);
+}
+
+.meter progress {
+  grid-column: 1 / -1;
+}
+
+progress {
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: var(--track-h);
+  border: 0;
+  border-radius: var(--track-h);
+  background: var(--c-line);
+  overflow: hidden;
+}
+
+progress::-webkit-progress-bar {
+  background: var(--c-line);
+}
+
+progress::-webkit-progress-value {
+  background: var(--c-fg);
+}
+
+.meter.live progress::-webkit-progress-value {
+  background: var(--c-accent);
+}
+
+/* Label/value list */
+.facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  column-gap: var(--s-5);
+  font-size: var(--fs-sm);
+}
+
+.facts dt,
+.facts dd {
+  padding: var(--s-2) 0;
+  border-bottom: var(--hairline);
+}
+
+.facts dt {
+  color: var(--c-fg-3);
+}
+
+.facts dd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-2);
+  color: var(--c-fg);
+}
+
+/* Disclosure */
+details > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  color: var(--c-fg-2);
+  font-size: var(--fs-sm);
+  cursor: pointer;
+  list-style: none;
+}
+
+details > summary::-webkit-details-marker {
+  display: none;
+}
+
+details > summary::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-right: 1px solid currentcolor;
+  border-bottom: 1px solid currentcolor;
+  transform: rotate(-45deg);
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+
+details[open] > summary::before {
+  transform: rotate(45deg);
+}
+
+details > summary:hover {
+  color: var(--c-fg);
+}
+
+/* Camera preview */
+.camera {
+  display: grid;
+  gap: var(--s-2);
+  align-content: start;
+}
+
+.preview {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border: var(--hairline);
+  border-radius: var(--r-md);
+  background: var(--c-surface);
+  /* Mirror, like a selfie view */
+  transform: scaleX(-1);
+}
+
+.camera figcaption {
+  color: var(--c-fg-3);
+  font-size: var(--fs-xs);
+}
+
+/* Full-window screens (consent, setup, calibration, diagnostics) */
+.screen {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: var(--s-6) var(--s-7) var(--s-7);
+}
+
+.screen-body {
+  display: grid;
+  gap: var(--s-5);
+  max-width: var(--prose-max);
+  padding-top: var(--s-8);
+}
+
+.lead {
+  color: var(--c-fg-2);
+  font-size: var(--fs-lg);
+  line-height: 1.45;
+  max-width: var(--prose-max);
+}
+
+.fine-print {
+  color: var(--c-fg-3);
+  font-size: var(--fs-xs);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

@@ -37,3 +37,6 @@ await Promise.all([
 await mkdir('dist/renderer', { recursive: true });
 await cp('src/renderer/index.html', 'dist/renderer/index.html');
 await cp('src/renderer/styles.css', 'dist/renderer/styles.css');
+await cp('src/renderer/styles', 'dist/renderer/styles', { recursive: true });
+// Self-hosted fonts and their OFL licenses; the CSP allows fonts from 'self' only.
+await cp('src/renderer/fonts', 'dist/renderer/fonts', { recursive: true });

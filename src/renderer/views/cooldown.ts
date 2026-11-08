@@ -1,6 +1,7 @@
 import type { AppSnapshot, CooldownView } from '../../shared/types';
 import type { BiometricProvider, ProviderState } from '../biometrics/provider';
-import { formatSec, h, zz, type View } from '../dom';
+import { h, zz, type View } from '../dom';
+import { formatSec } from '../format';
 import { unlockPath, type UnlockPath } from './unlock-path';
 
 const PATH_TITLE = {

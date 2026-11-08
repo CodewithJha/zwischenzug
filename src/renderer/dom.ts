@@ -40,8 +40,12 @@ export function staticView(el: HTMLElement): View {
   return { el, update: () => undefined, destroy: () => undefined };
 }
 
-export function formatSec(total: number): string {
-  const m = Math.floor(total / 60);
-  const s = total % 60;
-  return `${m}:${String(s).padStart(2, '0')}`;
+/** The shared top bar: wordmark on the left, optional context on the right. */
+export function topbar(...right: Child[]): HTMLElement {
+  return h(
+    'header',
+    { class: 'topbar' },
+    h('span', { class: 'wordmark' }, 'Zwischenzug'),
+    ...right,
+  );
 }

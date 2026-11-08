@@ -1,0 +1,77 @@
+/*
+ * Design tokens. Every color, size, space, radius and duration used by the app comes from here.
+ * Palette: black and white, one green accent reserved for live pulse, "near baseline" and focus.
+ */
+:root {
+  /* Neutrals */
+  --c-bg: #0a0a0a;
+  --c-surface: #111111;
+  --c-raised: #1a1a1a;
+  --c-hover: #222222;
+  --c-line: #262626;
+  --c-line-strong: #3d3d3d;
+  --c-fg: #f2f2f2;
+  --c-fg-2: #a8a8a8;
+  --c-fg-3: #808080;
+  --c-on-fg: #0a0a0a;
+
+  /* Accent: live pulse, near-baseline, focus. Use sparingly. */
+  --c-accent: #4cf28c;
+  --c-accent-weak: rgb(76 242 140 / 0.14);
+
+  /* Only where genuinely needed */
+  --c-warn: #c9ad74;
+  --c-danger: #e08178;
+
+  /* Type */
+  --font-sans: 'Schibsted Grotesk', 'Helvetica Neue', sans-serif;
+  --font-mono: 'Martian Mono', ui-monospace, monospace;
+  --fs-xs: 0.75rem;
+  --fs-sm: 0.8125rem;
+  --fs-md: 0.9375rem;
+  --fs-lg: 1.125rem;
+  --fs-xl: 1.5rem;
+  --fs-2xl: 2.25rem;
+  --fs-display: 6rem;
+  --lh-tight: 1.15;
+  --lh-body: 1.5;
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+  --tracking-tight: -0.02em;
+  --tracking-display: -0.04em;
+
+  /* Space (4px base) */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 32px;
+  --s-7: 48px;
+  --s-8: 64px;
+
+  /* Shape */
+  --r-sm: 4px;
+  --r-md: 6px;
+  --hairline: 1px solid var(--c-line);
+  --hairline-strong: 1px solid var(--c-line-strong);
+  --dot: 8px;
+  --control-h: 36px;
+  --track-h: 4px;
+
+  /* Motion */
+  --dur-fast: 150ms;
+  --dur-med: 240ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Layout. Panel width and bar height must match PANEL_WIDTH / BAR_HEIGHT in src/main/index.ts. */
+  --panel-width: 380px;
+  --bar-height: 56px;
+  --content-max: 1040px;
+  --prose-max: 60ch;
+  --camera-w: 288px;
+
+  color-scheme: dark;
+}

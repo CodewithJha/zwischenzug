@@ -1,0 +1,17 @@
+/* Self-hosted, OFL-1.1 licensed (see ../fonts/OFL-*.txt). Latin subset; other scripts fall back. */
+@font-face {
+  font-family: 'Schibsted Grotesk';
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: block;
+  src: url('../fonts/SchibstedGrotesk-Variable-latin.woff2') format('woff2-variations');
+}
+
+@font-face {
+  font-family: 'Martian Mono';
+  font-style: normal;
+  font-weight: 100 800;
+  font-stretch: 75% 112.5%;
+  font-display: block;
+  src: url('../fonts/MartianMono-Variable-latin.woff2') format('woff2-variations');
+}
