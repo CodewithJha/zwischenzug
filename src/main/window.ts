@@ -32,7 +32,7 @@ export function createAppWindow(canUseCamera: () => boolean): BrowserWindow {
     height: 900,
     minWidth: 1000,
     minHeight: 640,
-    backgroundColor: '#14161c',
+    backgroundColor: '#0a0a0a',
     title: 'Zwischenzug',
     webPreferences: {
       preload: PRELOAD,
