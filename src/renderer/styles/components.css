@@ -270,7 +270,6 @@ progress::-webkit-progress-value {
 .facts {
   display: grid;
   grid-template-columns: max-content 1fr;
-  column-gap: var(--s-5);
   font-size: var(--fs-sm);
 }
 
@@ -281,7 +280,12 @@ progress::-webkit-progress-value {
 }
 
 .facts dt {
+  padding-right: var(--s-5);
   color: var(--c-fg-3);
+}
+
+.facts button.quiet {
+  padding-block: 0;
 }
 
 .facts dd {

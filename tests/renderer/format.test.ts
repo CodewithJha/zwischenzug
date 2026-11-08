@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   capitalize,
+  describeCooldown,
   formatBpm,
   formatClock,
   formatSec,
@@ -55,6 +56,22 @@ describe('formatWhen', () => {
 
   it('formats clock times without seconds', () => {
     expect(formatClock(new Date(2026, 10, 8, 18, 52, 2).getTime(), 'en-US')).toBe('6:52 PM');
+  });
+});
+
+describe('describeCooldown', () => {
+  const base = { baselineBpm: 80.7, pulseAtLossBpm: 74.09070587158203, timeToUnlockSec: 60 };
+
+  it('names how the game unlocked, with whole bpm', () => {
+    expect(describeCooldown({ ...base, unlockReason: 'biometric' })).toBe(
+      'Unlocked by pulse after 1:00 · 74 bpm at the loss',
+    );
+    expect(describeCooldown({ ...base, unlockReason: 'timer', pulseAtLossBpm: null })).toBe(
+      'Unlocked by timer after 1:00',
+    );
+    expect(describeCooldown({ ...base, unlockReason: 'override', timeToUnlockSec: 12 })).toBe(
+      'Skipped after 0:12 · 74 bpm at the loss',
+    );
   });
 });
 

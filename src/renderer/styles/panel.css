@@ -1,0 +1,220 @@
+/* While playing, Lichess fills the left side (a native view); our UI is the right panel. */
+body[data-screen='playing'] {
+  background: var(--c-surface);
+}
+
+body[data-screen='playing'] #app {
+  margin-left: calc(100vw - var(--panel-width));
+  width: var(--panel-width);
+  height: 100vh;
+  overflow-y: auto;
+  border-left: var(--hairline);
+}
+
+.panel {
+  display: grid;
+  align-content: start;
+  gap: var(--s-6);
+  min-height: 100%;
+  padding: var(--s-5);
+}
+
+.panel-head {
+  padding-bottom: var(--s-1);
+}
+
+.panel-section {
+  display: grid;
+  gap: var(--s-3);
+}
+
+.panel-section h2,
+.section-head h2 {
+  color: var(--c-fg);
+  font-size: var(--fs-sm);
+}
+
+.section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-3);
+}
+
+.section-head .actions {
+  gap: var(--s-3);
+  font-size: var(--fs-xs);
+}
+
+/* Identity card */
+.panel-identity {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: var(--s-3);
+  row-gap: 2px;
+  align-items: center;
+  padding: var(--s-3) var(--s-4);
+  border: var(--hairline);
+  border-radius: var(--r-md);
+  background: var(--c-bg);
+}
+
+.panel-identity .dot {
+  grid-row: span 2;
+}
+
+.panel-identity span:last-child {
+  grid-column: 2;
+  font-size: var(--fs-sm);
+}
+
+.with-dot {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+
+.notices {
+  display: grid;
+  gap: var(--s-2);
+}
+
+.notice {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-2);
+  color: var(--c-fg-2);
+  font-size: var(--fs-sm);
+}
+
+.notice .dot {
+  transform: translateY(-1px);
+}
+
+/* Game log */
+.log {
+  display: grid;
+  border-top: var(--hairline);
+}
+
+.log-row {
+  display: grid;
+  gap: 2px;
+  padding: var(--s-3) 0;
+  border-bottom: var(--hairline);
+}
+
+.log-line {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-2);
+  font-size: var(--fs-sm);
+}
+
+.log-outcome {
+  font-weight: var(--fw-semibold);
+}
+
+.log-row[data-outcome='win'] .log-outcome,
+.log-row[data-outcome='draw'] .log-outcome {
+  color: var(--c-fg-2);
+  font-weight: var(--fw-medium);
+}
+
+.log-speed::before {
+  content: '·';
+  margin-right: var(--s-2);
+  color: var(--c-fg-3);
+}
+
+.log-speed {
+  color: var(--c-fg-2);
+}
+
+.log-when {
+  margin-left: auto;
+  color: var(--c-fg-3);
+  font-size: var(--fs-xs);
+  white-space: nowrap;
+}
+
+.log-detail {
+  color: var(--c-fg-3);
+  font-size: var(--fs-xs);
+}
+
+.log-empty {
+  padding: var(--s-4) 0;
+  border-bottom: var(--hairline);
+  color: var(--c-fg-3);
+  font-size: var(--fs-sm);
+}
+
+/* Settings */
+.advanced-body {
+  display: grid;
+  gap: var(--s-3);
+  padding-top: var(--s-3);
+}
+
+.panel-foot {
+  display: grid;
+  justify-items: start;
+  gap: var(--s-2);
+  margin-top: auto;
+  padding-top: var(--s-4);
+  border-top: var(--hairline);
+  font-size: var(--fs-xs);
+}
+
+/* Bar above the Lichess view while games are not allowed */
+.signin-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  width: calc(100vw - var(--panel-width));
+  height: var(--bar-height);
+  padding: 0 var(--s-5);
+  border-bottom: var(--hairline);
+  background: var(--c-bg);
+  font-size: var(--fs-sm);
+}
+
+.signin-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Fills the Lichess area while lichess.org cannot be reached */
+.offline-notice {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: var(--s-3);
+  width: calc(100vw - var(--panel-width));
+  padding: var(--s-5);
+  background: var(--c-bg);
+  text-align: center;
+}
+
+.offline-notice h2 {
+  font-size: var(--fs-lg);
+}
+
+.offline-notice button {
+  margin-top: var(--s-2);
+}
+
+.signin-bar:not([hidden]) ~ .offline-notice {
+  top: var(--bar-height);
+}

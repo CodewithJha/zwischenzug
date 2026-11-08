@@ -1,114 +1,151 @@
-import type { AppSnapshot, GameLogEntry } from '../../shared/types';
+import type { AppSnapshot, GameLogEntry, IdentityView } from '../../shared/types';
+import { statusLine, type DotKind } from '../components';
 import { h, zz, type View } from '../dom';
+import { capitalize, describeCooldown, formatBpm, formatWhen } from '../format';
 import { apiKeyForm } from './api-key';
 
-const REASON_LABEL = { biometric: 'pulse settled', timer: 'timer', override: 'skipped' } as const;
+const NO_GAMES_YET = 'no games found yet for this account';
 
-function logRow(g: GameLogEntry): HTMLElement {
-  const when = new Date(g.endedAt).toLocaleString();
-  const c = g.cooldown;
-  const pulse =
-    c?.baselineBpm != null
-      ? `baseline ${c.baselineBpm} · after loss ${c.pulseAtLossBpm ?? '–'} bpm · `
-      : '';
-  const detail = c
-    ? `${pulse}unlocked after ${c.timeToUnlockSec}s (${REASON_LABEL[c.unlockReason]})`
+function logRow(g: GameLogEntry, now: number): HTMLElement {
+  const streak = g.outcome === 'loss' && (g.consecutiveLosses ?? 0) > 1;
+  const detail = g.cooldown
+    ? describeCooldown(g.cooldown)
     : g.outcome === 'loss'
-      ? 'cooldown in progress'
+      ? 'Cooldown running'
       : '';
   return h(
     'li',
-    { class: `log-${g.outcome}` },
-    h('strong', {}, g.outcome),
-    ` · ${g.speed ?? ''} · ${when}`,
-    g.outcome === 'loss' && g.consecutiveLosses ? ` · ${g.consecutiveLosses} in a row` : null,
-    detail ? h('div', { class: 'muted' }, detail) : null,
+    { class: 'log-row', 'data-outcome': g.outcome },
+    h(
+      'p',
+      { class: 'log-line' },
+      h('span', { class: 'log-outcome' }, capitalize(g.outcome)),
+      g.speed ? h('span', { class: 'log-speed' }, capitalize(g.speed)) : null,
+      streak ? h('span', { class: 'log-speed' }, `${g.consecutiveLosses} in a row`) : null,
+      h(
+        'time',
+        { class: 'log-when', datetime: new Date(g.endedAt).toISOString() },
+        formatWhen(g.endedAt, now),
+      ),
+    ),
+    detail ? h('p', { class: 'log-detail' }, detail) : null,
   );
 }
 
-function fact(term: string, value: HTMLElement): HTMLElement[] {
-  return [h('dt', {}, term), h('dd', {}, value)];
+/** Identity card: who is signed in to the embedded Lichess, and whether games are allowed. */
+function identityCopy(id: IdentityView, username: string): [DotKind, string, string] {
+  const who = `@${username}`;
+  switch (id.status) {
+    case 'verified':
+      return ['live', `@${id.signedInAs ?? username}`, 'Signed in · games allowed'];
+    case 'checking':
+      return ['idle', who, 'Checking sign-in…'];
+    case 'signed-out':
+      return ['warn', who, 'Not signed in · games locked'];
+    case 'wrong-account':
+      return ['warn', who, `Signed in as @${id.signedInAs ?? '?'} · games locked`];
+    case 'error':
+      return ['warn', who, 'Can’t check sign-in · games locked'];
+  }
+}
+
+/** Text for the bar above Lichess while games are not allowed. */
+function barCopy(id: IdentityView): string {
+  if (id.status === 'error')
+    return 'Can’t check your Lichess sign-in. Games stay locked; retrying.';
+  return id.message.replace(/\.\.\.$/, '…');
+}
+
+function feedCopy(s: AppSnapshot['lichess']): string {
+  if (s.status === 'watching')
+    return s.message === NO_GAMES_YET ? 'Watching · no games yet' : 'Watching';
+  if (s.status === 'idle') return 'Not started';
+  return capitalize(s.message ?? 'Unavailable');
+}
+
+function fact(term: string, ...value: (Node | string)[]): HTMLElement[] {
+  return [h('dt', {}, term), h('dd', {}, ...value)];
 }
 
 /** Side panel shown next to Lichess while playing: status, game log, settings, delete-all. */
 export function panelView(): View {
-  const identityTitle = h('strong');
-  const identityDetail = h('span');
-  const identity = h(
-    'p',
-    { class: 'identity', role: 'status' },
-    h('span', { class: 'dot', 'aria-hidden': 'true' }),
-    h('span', {}, identityTitle, identityDetail),
-  );
-  const account = h('span');
-  const watcher = h('span');
-  const watchDot = h('span', { class: 'dot', 'aria-hidden': 'true' });
+  const identity = statusLine();
+  identity.el.classList.add('panel-identity');
+
+  const feedDot = h('span', { class: 'dot warn', 'aria-hidden': 'true' });
+  const feed = h('span');
   const mode = h('span');
-  const baseline = h('span');
-  const losses = h('span');
+  const baseline = h('span', { class: 'num' });
+  const losses = h('span', { class: 'num' });
+  const recalibrate = h('button', { class: 'quiet', onclick: () => void zz().recalibrate() });
   const facts = h(
     'dl',
-    { class: 'facts panel-facts' },
-    ...fact('Lichess', account),
-    ...fact('Games', h('span', {}, watchDot, ' ', watcher)),
+    { class: 'facts' },
+    ...fact('Game feed', h('span', { class: 'with-dot' }, feedDot, feed)),
     ...fact('Mode', mode),
-    ...fact('Baseline', baseline),
+    ...fact('Baseline', baseline, recalibrate),
     ...fact('Losses in a row', losses),
   );
-  const warnings = h('div', { class: 'panel-warnings' });
-  const message = h('p', { class: 'muted', role: 'status' });
-  const logList = h('ol', { class: 'log' });
-  let deleteArmed = false;
-  const deleteBtn = h('button', { class: 'danger' }, 'Delete all my data');
+  const notices = h('div', { class: 'notices' });
 
+  const logList = h('ol', { class: 'log' });
+  const logMessage = h('p', { class: 'message', role: 'status' });
   const refreshLog = async (): Promise<void> => {
     const games = await zz().getLog();
+    const now = Date.now();
     logList.replaceChildren(
       ...(games.length
-        ? games.map(logRow)
-        : [h('li', { class: 'log-empty' }, 'No finished games yet.')]),
+        ? games.map((g) => logRow(g, now))
+        : [h('li', { class: 'log-empty' }, 'Finished Lichess games appear here.')]),
     );
   };
+  const exportLog = async (format: 'csv' | 'json'): Promise<void> => {
+    const res = await zz().exportLog(format);
+    logMessage.textContent = res.ok ? 'Game log exported.' : res.error;
+  };
 
+  const key = apiKeyForm();
+
+  let deleteArmed = false;
+  const deleteMessage = h('p', { class: 'message', role: 'status' });
+  const deleteBtn = h('button', { class: 'quiet danger' }, 'Delete all my data');
   deleteBtn.addEventListener('click', async () => {
     if (!deleteArmed) {
       deleteArmed = true;
+      deleteBtn.classList.add('armed');
       deleteBtn.textContent = 'Click again to delete log, baseline and consent';
       return;
     }
     const res = await zz().deleteAllData();
-    message.textContent = res.ok ? 'All local data deleted.' : res.error;
+    deleteMessage.textContent = res.ok ? 'All local data deleted.' : res.error;
   });
 
-  const exportLog = async (format: 'csv' | 'json'): Promise<void> => {
-    const res = await zz().exportLog(format);
-    message.textContent = res.ok ? 'Game log exported.' : res.error;
-  };
-
   // Sits above the Lichess view (main leaves room for it) while play is not allowed.
-  const barText = h('span');
+  const barDot = h('span', { class: 'dot warn', 'aria-hidden': 'true' });
+  const barText = h('span', { class: 'signin-text' });
   const loginBtn = h(
     'button',
     { class: 'primary', onclick: () => void zz().openLichessLogin() },
-    'Open Lichess sign-in',
+    'Sign in to Lichess',
   );
-  const bar = h('div', { class: 'signin-bar', role: 'status' }, barText, loginBtn);
+  const bar = h('div', { class: 'signin-bar', role: 'status' }, barDot, barText, loginBtn);
 
   // Fills the Lichess area (main hides the view) while lichess.org fails to load.
   // The ticking countdown is hidden from screen readers so it is not announced every second.
-  const countdownText = h('span', { 'aria-hidden': 'true' });
+  const countdownText = h('span', { class: 'num', 'aria-hidden': 'true' });
   const retry = (): void => void zz().retryLichess();
   const offline = h(
     'div',
     { class: 'offline-notice', role: 'status' },
-    h('p', {}, "Couldn't reach lichess.org. ", countdownText),
+    h('h2', {}, 'Can’t reach lichess.org'),
+    h('p', { class: 'message' }, 'Check your connection. ', countdownText),
     h('button', { class: 'primary', onclick: retry }, 'Retry now'),
   );
   let retryAt: number | null = null;
   const showCountdown = (): void => {
     if (retryAt === null) return;
     const sec = Math.ceil((retryAt - Date.now()) / 1000);
-    countdownText.textContent = sec > 0 ? `Retrying in ${sec}s…` : 'Retrying…';
+    countdownText.textContent = sec > 0 ? `Retrying in ${sec} s` : 'Retrying…';
   };
   const countdown = setInterval(showCountdown, 1000);
   const onOnline = (): void => {
@@ -116,55 +153,68 @@ export function panelView(): View {
   };
   window.addEventListener('online', onOnline);
 
-  const recalibrate = h(
-    'button',
-    { onclick: () => void zz().recalibrate() },
-    'Recalibrate (1 min)',
-  );
   const el = h(
     'aside',
     { class: 'panel', 'aria-label': 'Zwischenzug' },
     bar,
     offline,
-    h(
-      'header',
-      { class: 'panel-head' },
-      h('h1', {}, 'Zwischenzug'),
-      h('p', { class: 'muted' }, 'A pause after a loss, before the next game.'),
-    ),
-    identity,
-    facts,
-    warnings,
-    h(
-      'section',
-      { class: 'panel-section', 'aria-labelledby': 'panel-pulse' },
-      h('h2', { id: 'panel-pulse' }, 'Pulse'),
-      h(
-        'div',
-        { class: 'actions' },
-        recalibrate,
-        h('button', { onclick: () => void zz().setDiagnostics(true) }, 'Presage diagnostics'),
-      ),
-    ),
+    h('header', { class: 'panel-head' }, h('span', { class: 'wordmark' }, 'Zwischenzug')),
+    h('section', { class: 'panel-section' }, identity.el, facts, notices),
     h(
       'section',
       { class: 'panel-section', 'aria-labelledby': 'panel-log' },
-      h('h2', { id: 'panel-log' }, 'Game log'),
-      logList,
       h(
         'div',
-        { class: 'actions' },
-        h('button', { onclick: () => void exportLog('csv') }, 'Export CSV'),
-        h('button', { onclick: () => void exportLog('json') }, 'Export JSON'),
+        { class: 'section-head' },
+        h('h2', { id: 'panel-log' }, 'Games'),
+        h(
+          'div',
+          { class: 'actions' },
+          h(
+            'button',
+            {
+              class: 'quiet',
+              'aria-label': 'Export game log as CSV',
+              onclick: () => void exportLog('csv'),
+            },
+            'Export CSV',
+          ),
+          h(
+            'button',
+            {
+              class: 'quiet',
+              'aria-label': 'Export game log as JSON',
+              onclick: () => void exportLog('json'),
+            },
+            'JSON',
+          ),
+        ),
       ),
+      logList,
+      logMessage,
     ),
     h(
       'section',
       { class: 'panel-section', 'aria-labelledby': 'panel-settings' },
       h('h2', { id: 'panel-settings' }, 'Settings'),
-      apiKeyForm(),
+      key.el,
+      h(
+        'details',
+        { class: 'advanced' },
+        h('summary', {}, 'Advanced'),
+        h(
+          'div',
+          { class: 'advanced-body' },
+          h('p', { class: 'field-help' }, 'Check the camera and pulse reading on this computer.'),
+          h(
+            'div',
+            { class: 'actions' },
+            h('button', { onclick: () => void zz().setDiagnostics(true) }, 'Pulse diagnostics'),
+          ),
+        ),
+      ),
     ),
-    h('section', { class: 'panel-section danger-zone' }, deleteBtn, message),
+    h('footer', { class: 'panel-foot' }, deleteBtn, deleteMessage),
   );
 
   let lastLosses = -1;
@@ -173,40 +223,42 @@ export function panelView(): View {
     update(s: AppSnapshot) {
       const p = s.profile;
       const st = s.identity.status;
-      const verified = st === 'verified';
-      bar.hidden = verified;
-      barText.textContent =
-        st === 'signed-out' || st === 'wrong-account'
-          ? `${s.identity.message} Games are blocked until then.`
-          : s.identity.message;
+      bar.hidden = st === 'verified';
+      barDot.className = st === 'checking' ? 'dot idle' : 'dot warn';
+      barText.textContent = barCopy(s.identity);
       loginBtn.hidden = st !== 'signed-out';
       retryAt = s.lichessPage.status === 'failed' ? s.lichessPage.retryAt : null;
       offline.hidden = retryAt === null;
       showCountdown();
 
-      identity.dataset.status = st;
-      identityTitle.textContent = verified
-        ? `${s.identity.message}. Play allowed.`
-        : st === 'checking'
-          ? s.identity.message
-          : 'Games are blocked.';
-      identityDetail.textContent = verified || st === 'checking' ? '' : ` ${s.identity.message}`;
-
-      account.textContent = `@${p.username ?? '?'}`;
-      watchDot.className = `dot ${s.lichess.status}`;
-      watcher.textContent = s.lichess.message ?? s.lichess.status;
-      mode.textContent = p.consent?.mode === 'camera' ? 'Camera between games' : 'Timer only';
-      baseline.textContent = p.baseline ? `${p.baseline.bpm} bpm` : 'Not set';
-      losses.textContent = String(s.consecutiveLosses);
-      recalibrate.textContent =
-        p.consent?.mode === 'camera' ? 'Recalibrate (1 min)' : 'Use the camera (1-min check-in)';
-      const warn = (text: string): HTMLElement => h('p', { class: 'warn' }, text);
-      warnings.replaceChildren(
-        ...(p.consent?.mode === 'camera' && !s.presage.apiKeyConfigured
-          ? [warn('No Presage API key: cooldowns will use the timer.')]
-          : []),
-        ...(s.presage.sdkError ? [warn(`Presage SDK: ${s.presage.sdkError}`)] : []),
+      identity.set(...identityCopy(s.identity, p.username ?? '?'));
+      feedDot.hidden = s.lichess.status !== 'error';
+      feed.textContent = feedCopy(s.lichess);
+      const camera = p.consent?.mode === 'camera';
+      mode.textContent = camera ? 'Camera between games' : 'Timer only';
+      baseline.textContent = p.baseline ? `${formatBpm(p.baseline.bpm)} bpm` : 'Not set';
+      recalibrate.textContent = camera ? 'Recalibrate' : 'Use camera';
+      recalibrate.setAttribute(
+        'aria-label',
+        camera
+          ? 'Recalibrate baseline (one-minute check-in)'
+          : 'Use the camera (one-minute check-in)',
       );
+      losses.textContent = String(s.consecutiveLosses);
+      key.setConfigured(s.presage.apiKeyConfigured);
+
+      const notice = (text: string): HTMLElement =>
+        h('p', { class: 'notice' }, h('span', { class: 'dot warn', 'aria-hidden': 'true' }), text);
+      notices.replaceChildren(
+        ...(camera && !s.presage.apiKeyConfigured
+          ? [notice('No Presage API key. Cooldowns use the timer until you add one below.')]
+          : []),
+        ...(s.presage.sdkError && !s.presage.sdkError.startsWith('loading')
+          ? [notice('Pulse reading is unavailable. Cooldowns use the timer.')]
+          : []),
+      );
+      notices.hidden = !notices.childElementCount;
+
       if (s.consecutiveLosses !== lastLosses) {
         lastLosses = s.consecutiveLosses;
         void refreshLog();

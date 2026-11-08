@@ -1,4 +1,5 @@
 /** Pure display formatting. No DOM, so it is unit-tested. */
+import type { GameLogEntry } from '../shared/types';
 
 const DAY_MS = 86_400_000;
 
@@ -45,4 +46,16 @@ export function formatWhen(ms: number, now: number, locale?: string): string {
 /** First letter upper-cased: "bullet" -> "Bullet". */
 export function capitalize(text: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+const UNLOCKED_BY = { biometric: 'Unlocked by pulse', timer: 'Unlocked by timer' } as const;
+
+/** One line for a logged cooldown: "Unlocked by pulse after 1:00 · 74 bpm at the loss". */
+export function describeCooldown(c: NonNullable<GameLogEntry['cooldown']>): string {
+  const after = formatSec(c.timeToUnlockSec);
+  const how =
+    c.unlockReason === 'override'
+      ? `Skipped after ${after}`
+      : `${UNLOCKED_BY[c.unlockReason]} after ${after}`;
+  return c.pulseAtLossBpm == null ? how : `${how} · ${formatBpm(c.pulseAtLossBpm)} bpm at the loss`;
 }

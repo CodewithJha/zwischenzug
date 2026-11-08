@@ -114,7 +114,7 @@ export function calibrationView(provider: BiometricProvider): View {
     update(s: AppSnapshot) {
       durationSec = s.settings.calibrationSec;
       minSamples = s.settings.calibrationMinSamples;
-      if (!s.presage.apiKeyConfigured && !keySlot.firstChild) keySlot.append(apiKeyForm());
+      if (!s.presage.apiKeyConfigured && !keySlot.firstChild) keySlot.append(apiKeyForm().el);
       if (s.presage.apiKeyConfigured) keySlot.replaceChildren();
       startBtn.disabled = timer !== null || !s.presage.apiKeyConfigured || !s.presage.sdkLoaded;
       if (!s.presage.sdkLoaded) hint.textContent = s.presage.sdkError ?? 'Presage SDK not loaded.';
