@@ -22,7 +22,8 @@
     "presage:check": "node scripts/presage-key-check.mjs",
     "icon": "electron scripts/make-icon.mjs",
     "dist:mac": "npm run build && electron-builder --mac --arm64",
-    "dist:dir": "npm run build && electron-builder --dir"
+    "dist:dir": "npm run build && electron-builder --dir",
+    "app": "npm run dist:dir && open release/mac*/Zwischenzug.app"
   },
   "dependencies": {
     "@smartspectra/node-sdk": "3.4.0",

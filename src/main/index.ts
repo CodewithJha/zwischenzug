@@ -11,6 +11,7 @@ import { installRequestLock } from './lichess/lock';
 import { LichessGameSource } from './lichess/source';
 import { createLichessView } from './lichess/view';
 import { logger } from './log';
+import { installAppMenu } from './menu';
 import { initPresage, shutdownPresage, type PresageStatus } from './presage';
 import { presageKeySource } from './secrets';
 import { Session } from './session';
@@ -37,6 +38,7 @@ if (process.env.ZZ_SMOKE_DIR && !app.isPackaged) {
 if (!app.requestSingleInstanceLock()) app.exit(0);
 
 app.whenReady().then(() => {
+  installAppMenu();
   // Packaged builds get the icon from the bundle; in dev the dock would show Electron's.
   if (!app.isPackaged) app.dock?.setIcon(path.join(app.getAppPath(), 'build', 'icon.png'));
   const config = loadConfig();
