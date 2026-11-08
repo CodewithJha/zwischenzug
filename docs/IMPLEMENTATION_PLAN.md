@@ -41,7 +41,7 @@ Status legend: [x] done and verified, [~] implemented but not verified, [ ] not 
 - [~] Validation hints and SDK error -> timer fallback mapping
 - [~] Calibration (60 s, median of stable readings, retry / timer-only)
 - [~] Live pulse vs baseline on the cooldown screen
-- [x] Diagnostics screen (SDK/key/camera status, REAL SDK vs FALLBACK, raw readings, stats)
+- [x] Diagnostics screen under Settings › Advanced (SDK/key/camera status, session running vs stopped, raw readings, stats)
 - [x] `npm run presage:check`: key check without a camera (bad key -> `kAuthenticationFailed`)
 - [x] Provider: serialized teardown (shared preload port), camera released on SDK errors
 - [ ] **Run with a real API key on this Mac** (docs/MANUAL_TESTS.md): time to first reading,

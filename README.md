@@ -17,12 +17,29 @@ Built for the [DEV.to Presage SmartSpectra SDK Challenge 2026](https://dev.to/ch
 > any condition, and it does not claim to detect "tilt". It only compares your current
 > pulse reading with your own baseline.
 
-![Cooldown screen: pulse path, 9 of 15 seconds near baseline](docs/screenshots/cooldown-recovering.png)
+![Cooldown screen: live pulse back near baseline, 9 of 15 seconds held](docs/screenshots/cooldown-recovering.png)
 
-The cooldown screen says which unlock path is active: **by pulse** (green; live bpm against
-your band) or **by timer** (amber; with the reason: timer-only mode, no baseline, no API key,
-SDK error, or no face/signal). More in [docs/screenshots/](docs/screenshots/). These
-screenshots use simulated readings and a placeholder camera image.
+The cooldown screen shows one status line, one big number and one progress bar. **Live pulse**
+(green) shows your bpm against your band; **Timer** shows the countdown and the plain reason
+(timer only, no baseline, no API key, no face, too dark). More in
+[docs/screenshots/](docs/screenshots/):
+
+| Screen              | File                                                                                                                               |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Consent             | [consent.png](docs/screenshots/consent.png)                                                                                        |
+| Lichess account     | [setup.png](docs/screenshots/setup.png)                                                                                            |
+| Check-in            | [calibration.png](docs/screenshots/calibration.png)                                                                                |
+| Cooldown (pulse)    | [cooldown-pulse.png](docs/screenshots/cooldown-pulse.png), [cooldown-waiting.png](docs/screenshots/cooldown-waiting.png)           |
+| Cooldown (timer)    | [cooldown-no-face.png](docs/screenshots/cooldown-no-face.png), [cooldown-timer-only.png](docs/screenshots/cooldown-timer-only.png) |
+| Side panel          | [panel.png](docs/screenshots/panel.png), [panel-settings.png](docs/screenshots/panel-settings.png)                                 |
+| Sign-in bar         | [panel-signed-out.png](docs/screenshots/panel-signed-out.png)                                                                      |
+| Lichess unreachable | [lichess-offline.png](docs/screenshots/lichess-offline.png)                                                                        |
+| Diagnostics         | [diagnostics.png](docs/screenshots/diagnostics.png)                                                                                |
+
+The pulse-path cooldowns, `panel.png` and `panel-settings.png` are **simulated**: real
+renderer views fed crafted app states, with a placeholder camera image. The others are
+scripted smoke runs of the app with a temporary profile. The Lichess area is empty in all of
+them because the embedded lichess.org view is captured separately.
 
 ## Status
 
@@ -49,9 +66,20 @@ camera session. [docs/MANUAL_TESTS.md](docs/MANUAL_TESTS.md) has the steps.
 ```bash
 git clone <this repo> zwischenzug && cd zwischenzug
 npm install
-cp .env.example .env    # then put your Presage key in .env (optional)
-npm run dev
+cp .env.example .env    # then put your Presage key in .env (optional, dev only)
+npm run app
 ```
+
+## Run
+
+- **`npm run app`** builds the real app (`release/mac-arm64/Zwischenzug.app`) and opens it.
+  This is the user-facing build: named Zwischenzug in the menu bar, Dock, app switcher and
+  About panel, with its own icon and a minimal menu (no reload or developer tools). It does not
+  read `.env`; paste your Presage key under **Settings** in the side panel once.
+- **`npm run dev`** runs from source with the stock Electron binary, for development. The menu
+  items say Zwischenzug and a View menu adds Reload and DevTools, but the bold menu-bar title,
+  Dock tooltip and app switcher show **Electron**, because they come from Electron's own app
+  bundle.
 
 `npm install` downloads the SmartSpectra native runtime for every supported platform (a few
 hundred MB). `package.json#allowScripts` approves the install scripts that are needed
@@ -67,16 +95,17 @@ and Electron will exit immediately. Use `env -u ELECTRON_RUN_AS_NODE npm run dev
    challenge page uses).
 2. Copy your API key.
 3. Either put it in `.env` as `PRESAGE_API_KEY=...` (development), or paste it into the app
-   (side panel or check-in screen). Keys entered in the app are encrypted with the OS keychain
+   (**Settings** in the side panel, or the check-in screen). Keys entered in the app are encrypted with the OS keychain
    (Electron `safeStorage`) and stored in the app's data folder. The key is never in source.
    `PRESAGE_API_KEY` wins over a saved key.
 4. `npm run presage:check` confirms Presage accepts the key without using the camera (blank
    frames for 20 s; the key is never printed).
-5. In the app, **Presage diagnostics** (side panel or check-in screen) shows whether the SDK
-   loaded, whether a key is present, the OS camera permission, and a live measurement with raw
-   readings, time to first reading, readings per second and the share of stable readings. It
-   says **REAL SDK** only while a Presage session is actually running, and **FALLBACK** with
-   the reason otherwise. Readings on that screen are not saved.
+5. In the app, **Settings › Advanced › Pulse diagnostics** (or **Troubleshoot** on the
+   check-in screen after a failure) shows whether the SDK loaded, whether a key is present,
+   the OS camera permission, and a live measurement with raw readings, time to first reading,
+   readings per second and the share of stable readings. It says **Presage session running**
+   only while a session is actually running, and **Stopped** with the reason otherwise.
+   Readings on that screen are not saved.
 
 Note: Presage's sample notes that some keys are not enabled for cardio metrics. Zwischenzug
 requests only `PULSE_RATE`. If your key is not provisioned for it, the SDK reports an error,
@@ -84,7 +113,7 @@ the app shows it and falls back to the timer.
 
 ### First run
 
-1. **Consent**: choose "Allow camera between games" or "Timer only, no camera".
+1. **Consent**: choose "Allow camera between games" or "Timer only".
 2. **Lichess username**: the account whose public game feed is watched.
 3. **Check-in** (camera mode): sit as you usually play, light in front of you, one minute.
 4. **Play**: sign in to Lichess in the left pane as that account and play normally. Until the
@@ -97,6 +126,7 @@ the app shows it and falls back to the timer.
 
 | Script                            | What it does                                                      |
 | --------------------------------- | ----------------------------------------------------------------- |
+| `npm run app`                     | Build the packaged app and open it (the user-facing build)        |
 | `npm run dev`                     | Build all bundles and launch Electron                             |
 | `npm run build`                   | Build `dist/` (main, preload, renderer) with esbuild              |
 | `npm start`                       | Launch the last build                                             |
@@ -172,7 +202,7 @@ Defaults live in [`src/core/config.ts`](src/core/config.ts). Override them with 
   The sign-in check uses `/account/info`, an endpoint built for Lichess's old mobile app; if
   Lichess removes or changes it, play stays blocked (fail closed) and the bar says why.
 - **lichess.org unreachable.** If the Lichess page fails to load (offline, timeout), the app
-  shows "Couldn't reach lichess.org" with a **Retry now** button and retries after 2 s, 5 s,
+  shows "Can’t reach lichess.org" with a **Retry now** button and retries after 2 s, 5 s,
   10 s, then every 30 s, and at once when the network comes back. A load that hangs on a very
   slow connection is not cut short; it shows "Retrying…" until Chromium gives up or it loads.
 - **Sign-in check latency.** Sign-out and account switches are caught at once (login cookie
@@ -182,8 +212,9 @@ Defaults live in [`src/core/config.ts`](src/core/config.ts). Override them with 
   10-reading calibration minimum is a guess and configurable.
 - **Pulse after casual losses may barely rise.** The minimum wait and timer still apply. The
   local log lets you see your own numbers.
-- **Dev builds show "Electron" in the menu bar.** The bold app-menu title comes from the
-  Electron bundle; the packaged app is named Zwischenzug. A Presage key saved in the app before
+- **Dev builds show "Electron" in the menu bar.** The bold app-menu title, Dock tooltip and app
+  switcher come from the stock Electron bundle; `npm run app` builds the app named Zwischenzug
+  everywhere. A Presage key saved in the app before
   the rename may need saving again (its keychain entry is tied to the app name);
   `PRESAGE_API_KEY` in `.env` is unaffected.
 - **Breathing guide is a fixed pace** (in 4, out 6), not a measurement.
@@ -195,6 +226,9 @@ Defaults live in [`src/core/config.ts`](src/core/config.ts). Override them with 
 - Presage SmartSpectra SDK (`@smartspectra/node-sdk`), integrated following the official
   Electron quickstart (renderer SDK, SDK preload bridge, `bindSmartSpectraIpc`).
 - Lichess public API: <https://lichess.org/api>.
+- Fonts, self-hosted under the SIL Open Font License 1.1 (licenses in `src/renderer/fonts/`):
+  [Schibsted Grotesk](https://github.com/schibsted/schibsted-grotesk) for text and
+  [Martian Mono](https://github.com/evilmartians/mono) for numbers.
 - Research basis for the time floors (one minute, 30 minutes after five losses):
   [romanbreyten/chess-tilt](https://github.com/romanbreyten/chess-tilt).
 

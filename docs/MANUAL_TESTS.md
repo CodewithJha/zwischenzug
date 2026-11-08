@@ -21,20 +21,22 @@ Use a throwaway profile so tests do not touch your real data:
 ## 2. Live measurement on the diagnostics screen
 
 1. Launch with a throwaway profile (above). Choose "Allow camera between games", enter any
-   Lichess username, then on the check-in screen click **Presage diagnostics**.
+   Lichess username, then click **Use the timer instead** and open **Settings › Advanced ›
+   Pulse diagnostics** in the side panel (or click **Troubleshoot** after a failed check-in).
 2. Check the facts: SDK `loaded (v3.4.0)`, API key present `yes (PRESAGE_API_KEY)`, and
-   "Cooldowns will use: REAL SDK".
+   "Ready: cooldowns unlock by pulse, or by timer if the signal drops".
 3. Click **Start measurement**. macOS asks for camera access the first time. In dev builds
    the prompt may name Electron or the terminal app you launched from; allow it.
 4. Sit still, face lit from the front, for about 60 s. The label must read
-   `REAL SDK: Presage session running` and rows must appear under "Latest readings".
+   `Presage session running` and rows must appear under "Latest readings".
 5. Click **Stop**. The camera light must go off within a few seconds.
 
 ## 3. Check-in (calibration)
 
-Click **Back**, then **Start check-in** and sit still for one minute. Pass: the app moves to
-the playing screen and the panel shows "Baseline: NN bpm". On failure it shows how many
-usable readings it got.
+Click **Back**, then **Recalibrate** in the side panel (camera mode), then **Start check-in**
+and sit still for one minute. Pass: the app moves to the playing screen and the panel shows
+"Baseline NN bpm". On failure it says it couldn't get a steady reading and offers
+**Troubleshoot**.
 
 ## 4. Failure cases (diagnostics screen unless noted)
 
@@ -42,30 +44,30 @@ usable readings it got.
 | --------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------ |
 | No face         | Start, then move out of frame for 20 s                            | Hint "No face in view"; no new stable readings                                 |
 | Poor light      | Start in a dark room                                              | Hint "Too dark..."; stable share drops                                         |
-| Camera in use   | Open Photo Booth first, then Start                                | FALLBACK: "The camera is in use by another app."; camera light off afterwards  |
-| Camera denied   | System Settings > Privacy & Security > Camera: turn off the entry | FALLBACK: "Camera access is off..." (re-enable it afterwards)                  |
-| Bad key         | Launch with `PRESAGE_API_KEY=wrong`                               | FALLBACK: "Presage rejected the API key."; event `kAuthenticationFailed`       |
+| Camera in use   | Open Photo Booth first, then Start                                | Stopped: "The camera is in use by another app."; camera light off afterwards   |
+| Camera denied   | System Settings > Privacy & Security > Camera: turn off the entry | Stopped: "Camera access is off..." (re-enable it afterwards)                   |
+| Bad key         | Launch with `PRESAGE_API_KEY=wrong`                               | Stopped: "Presage rejected the API key."; event `kAuthenticationFailed`        |
 | Network loss    | Wi-Fi off, then Start                                             | Note the message and event shown (expected `kNetworkError`)                    |
-| Signal lost     | During a real cooldown, leave the frame                           | "No pulse reading right now. Timer fallback in ..." and the timer still unlock |
-| Lichess offline | Wi-Fi off while playing                                           | Panel: "cannot reach Lichess; retrying"; recovers when Wi-Fi is back           |
+| Signal lost     | During a real cooldown, leave the frame                           | Status "Timer" with the reason; the timer still unlocks                        |
+| Lichess offline | Wi-Fi off while playing                                           | Panel game feed: "Cannot reach Lichess; retrying"; recovers when Wi-Fi is back |
 
 ## 5. Lichess sign-in check
 
 The logged-out case is verified by a smoke run. The signed-in cases need your account:
 
 1. Launch with your test profile. While Lichess is signed out, the amber bar above Lichess
-   reads "Sign in to Lichess as @you to play. Games are blocked until then." Click a pool
+   reads "Sign in to Lichess as @you to play." Click a pool
    (e.g. 1+0): no game starts.
-2. Click **Open Lichess sign-in** and sign in as the configured account. Within about a second
-   the bar disappears and the panel shows "Signed in as @you · play allowed". The log line is
+2. Click **Sign in to Lichess** and sign in as the configured account. Within about a second
+   the bar disappears and the panel shows "@you · Signed in · games allowed". The log line is
    `lichess sign-in: ... -> verified`. Start a casual game: it works.
 3. Sign out from the Lichess avatar menu. The bar returns immediately; pools do nothing.
 4. Sign in as a different account (if you have one): the bar says "Signed in as @other. Sign
    out and sign in to Lichess as @you to play."; no game starts.
 5. Turn Wi-Fi off and wait up to a minute: the bar says it could not check the sign-in. Turn
    Wi-Fi on: it clears within about 10 s.
-6. Wi-Fi off at launch: quit, turn Wi-Fi off, launch. The Lichess area says "Couldn't reach
-   lichess.org. Retrying in Ns…" with a **Retry now** button (also reachable with Tab), and
+6. Wi-Fi off at launch: quit, turn Wi-Fi off, launch. The Lichess area says "Can’t reach
+   lichess.org. Retrying in N s" with a **Retry now** button (also reachable with Tab), and
    the bar says the sign-in could not be checked. Turn Wi-Fi on: Lichess appears within a few
    seconds (at once if macOS reports the network back, otherwise at the next retry or on
    **Retry now**). The log shows `lichess loaded after N failed attempt(s)`.
