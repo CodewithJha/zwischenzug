@@ -1,0 +1,52 @@
+/* Onboarding screens: consent, setup, calibration. */
+.hero {
+  font-size: var(--fs-2xl);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-display);
+}
+
+.consent-points {
+  margin-block: var(--s-2);
+  border-top: var(--hairline);
+}
+
+.consent-points dt {
+  color: var(--c-fg);
+  font-weight: var(--fw-medium);
+}
+
+.consent-points dd {
+  display: block;
+  color: var(--c-fg-2);
+}
+
+.screen-body .field {
+  max-width: 420px;
+}
+
+/* Calibration */
+.cal-head {
+  display: grid;
+  gap: var(--s-3);
+  padding-top: var(--s-7);
+}
+
+.cal-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--s-7);
+  align-items: start;
+  padding-top: var(--s-6);
+}
+
+.cal-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s-5);
+  justify-items: start;
+}
+
+.cal-main .meter,
+.cal-main .field {
+  justify-self: stretch;
+}

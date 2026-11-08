@@ -44,34 +44,12 @@
 }
 
 /* The number */
-.readout {
-  display: flex;
-  align-items: baseline;
-  gap: var(--s-3);
+.cooldown .readout {
   margin-top: calc(var(--s-2) * -1);
-}
-
-.readout-value {
-  font-family: var(--font-mono);
-  font-size: var(--fs-display);
-  font-weight: 300;
-  font-stretch: 87.5%;
-  line-height: 1;
-  letter-spacing: var(--tracking-display);
-  transition: color var(--dur-med) var(--ease-out);
-}
-
-.readout-value.empty {
-  color: var(--c-fg-3);
 }
 
 .cooldown[data-band='in'] .readout-value {
   color: var(--c-accent);
-}
-
-.readout-unit {
-  color: var(--c-fg-2);
-  font-size: var(--fs-lg);
 }
 
 /* Gauge */

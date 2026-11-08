@@ -1,7 +1,7 @@
 import { readingStats } from '../../core/pulse';
 import type { AppSnapshot, DiagnosticsInfo } from '../../shared/types';
 import type { BiometricProvider, PulseReading } from '../biometrics/provider';
-import { h, zz, type View } from '../dom';
+import { h, topbar, zz, type View } from '../dom';
 
 const KEY_LABEL = { env: 'yes (PRESAGE_API_KEY)', saved: 'yes (saved in the app)' } as const;
 const MAX_ROWS = 15;
@@ -18,11 +18,11 @@ export function diagnosticsView(provider: BiometricProvider): View {
   const facts = h('dl', { class: 'facts' });
   const readiness = h('p', { class: 'badge' });
   const mode = h('p', { class: 'badge', role: 'status' });
+  const video = h('video', { class: 'preview', muted: true, autoplay: true, playsinline: true });
   const hint = h('p', { class: 'hint' });
   const stats = h('p', { class: 'stats' });
   const rows = h('tbody');
   const events = h('ol', { class: 'events' });
-  const video = h('video', { class: 'preview', muted: true, autoplay: true, playsinline: true });
   const startBtn = h('button', { class: 'primary' }, 'Start measurement');
   const stopBtn = h('button', { disabled: true }, 'Stop');
 
@@ -57,8 +57,8 @@ export function diagnosticsView(provider: BiometricProvider): View {
     facts.replaceChildren(...items.flatMap(([k, v]) => [h('dt', {}, k), h('dd', {}, v)]));
     const ready = p?.sdkLoaded && info?.apiKeySource && cameraMode;
     readiness.textContent = ready
-      ? 'Cooldowns will use: REAL SDK (pulse), timer if the signal drops'
-      : 'Cooldowns will use: FALLBACK (timer only)';
+      ? 'Ready: cooldowns unlock by pulse, or by timer if the signal drops.'
+      : 'Not ready: cooldowns use the timer only.';
     readiness.className = `badge ${ready ? 'real' : 'fallback'}`;
     startBtn.disabled = running || !ready;
   };
@@ -134,12 +134,12 @@ export function diagnosticsView(provider: BiometricProvider): View {
       state: (s) => {
         if (s.kind === 'starting') return;
         if (s.kind === 'measuring') {
-          setMode('REAL SDK: Presage session running', 'real');
+          setMode('Presage session running', 'real');
           hint.textContent = s.ok ? 'Signal OK' : (s.hint ?? 'Adjusting...');
           hint.className = `hint ${s.ok ? 'ok' : 'warn'}`;
           return;
         }
-        setMode(`FALLBACK: ${s.reason} Cooldowns would use the timer.`, 'fallback');
+        setMode(`Stopped: ${s.reason} Cooldowns would use the timer.`, 'fallback');
         running = false;
         stopTimer();
         stopBtn.disabled = true;
@@ -160,25 +160,31 @@ export function diagnosticsView(provider: BiometricProvider): View {
 
   const el = h(
     'section',
-    { class: 'screen diagnostics' },
-    h('h1', {}, 'Presage diagnostics'),
-    h(
-      'p',
-      { class: 'muted' },
-      'Checks the SmartSpectra SDK on this machine. Readings shown here are not saved and do ' +
-        'not affect any cooldown. The camera turns off when you stop or leave this screen.',
-    ),
-    facts,
-    readiness,
+    { class: 'screen diagnostics', 'aria-labelledby': 'diag-title' },
+    topbar(h('button', { onclick: () => void zz().setDiagnostics(false) }, 'Back')),
     h(
       'div',
-      { class: 'actions' },
-      startBtn,
-      stopBtn,
-      h('button', { onclick: () => void zz().setDiagnostics(false) }, 'Back'),
+      { class: 'diag-head' },
+      h('h1', { id: 'diag-title' }, 'Pulse diagnostics'),
+      h(
+        'p',
+        { class: 'lead' },
+        'Checks the Presage SmartSpectra SDK on this computer. Readings here are not saved and ' +
+          'do not affect any cooldown.',
+      ),
     ),
-    mode,
-    h('div', { class: 'monitor' }, video, h('div', {}, hint, stats)),
+    h(
+      'div',
+      { class: 'diag-grid' },
+      h(
+        'div',
+        { class: 'diag-col' },
+        facts,
+        readiness,
+        h('div', { class: 'actions' }, startBtn, stopBtn),
+      ),
+      h('div', { class: 'diag-col' }, video, mode, hint, stats),
+    ),
     h('h2', {}, 'Latest readings'),
     h(
       'table',

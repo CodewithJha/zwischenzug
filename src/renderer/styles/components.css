@@ -266,6 +266,37 @@ progress::-webkit-progress-value {
   background: var(--c-accent);
 }
 
+/* The one big number (pulse or countdown) */
+.readout {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-3);
+}
+
+.readout-value {
+  font-family: var(--font-mono);
+  font-size: var(--fs-display);
+  font-weight: 300;
+  font-stretch: 87.5%;
+  line-height: 1;
+  letter-spacing: var(--tracking-display);
+  transition: color var(--dur-med) var(--ease-out);
+}
+
+.readout-value.empty {
+  color: var(--c-line-strong);
+}
+
+/* Dashes sit mid-height, so centre the unit against them instead of the baseline. */
+.readout:has(.empty) {
+  align-items: center;
+}
+
+.readout-unit {
+  color: var(--c-fg-2);
+  font-size: var(--fs-lg);
+}
+
 /* Label/value list */
 .facts {
   display: grid;

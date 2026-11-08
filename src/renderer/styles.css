@@ -1,8 +1,9 @@
 /* Entry stylesheet. Tokens first; every later file only uses tokens. */
-@import url('styles/legacy.css');
 @import url('styles/tokens.css');
 @import url('styles/fonts.css');
 @import url('styles/base.css');
 @import url('styles/components.css');
 @import url('styles/cooldown.css');
 @import url('styles/panel.css');
+@import url('styles/screens.css');
+@import url('styles/diagnostics.css');

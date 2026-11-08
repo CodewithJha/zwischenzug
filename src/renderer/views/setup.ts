@@ -1,11 +1,12 @@
-import { h, staticView, zz, type View } from '../dom';
+import { h, staticView, topbar, zz, type View } from '../dom';
 
 export function setupView(): View {
   const input = h('input', {
     id: 'username',
     autocomplete: 'off',
     spellcheck: 'false',
-    placeholder: 'your Lichess username',
+    placeholder: 'username',
+    'aria-describedby': 'username-help',
   });
   const error = h('p', { class: 'error', role: 'alert' });
   const submit = async (e: Event): Promise<void> => {
@@ -17,22 +18,31 @@ export function setupView(): View {
   return staticView(
     h(
       'section',
-      { class: 'screen' },
-      h('h1', {}, 'Which Lichess account?'),
+      { class: 'screen', 'aria-labelledby': 'setup-title' },
+      topbar(),
       h(
-        'p',
-        {},
-        'Zwischenzug watches the public game feed of this account to notice when a game ends. ' +
-          'You will still sign in to Lichess normally inside the app; no Lichess password or token is shared with Zwischenzug.',
+        'div',
+        { class: 'screen-body' },
+        h('h1', { id: 'setup-title', class: 'hero' }, 'Your Lichess account'),
+        h(
+          'p',
+          { id: 'username-help', class: 'lead' },
+          'Zwischenzug reads its public game feed to see when a game ends. You sign in to Lichess ' +
+            'inside the app; no password or token reaches Zwischenzug.',
+        ),
+        h(
+          'form',
+          { class: 'field', onsubmit: (e) => void submit(e) },
+          h('label', { for: 'username' }, 'Lichess username'),
+          h(
+            'div',
+            { class: 'input-row' },
+            input,
+            h('button', { class: 'primary', type: 'submit' }, 'Continue'),
+          ),
+          error,
+        ),
       ),
-      h(
-        'form',
-        { onsubmit: (e) => void submit(e) },
-        h('label', { for: 'username' }, 'Lichess username'),
-        input,
-        h('button', { class: 'primary', type: 'submit' }, 'Continue'),
-      ),
-      error,
     ),
   );
 }
