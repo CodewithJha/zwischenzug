@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    # The app is macOS-only and packages the darwin-arm64 Presage SDK, so build on Apple Silicon.
+    runs-on: macos-14
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # Typecheck, lint, format check and unit tests. No Presage key or network needed.
+      - run: npm run check
+
+      - run: npm run build
+
+      # Unsigned .app bundle (no Developer ID on CI); checks packaging and Electron fuses apply.
+      - run: npm run dist:dir
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
