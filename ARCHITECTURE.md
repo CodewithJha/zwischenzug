@@ -139,7 +139,7 @@ sequenceDiagram
 1. `GET /api/user/{username}/current-game` every 10 s returns the ongoing game, or the last
    game played. Ongoing games are delayed by three moves for anti-cheat.
 2. For a game seen in progress (from the poll, or from one `GET /game/export/{id}` when the
-   embedded page opens a game URL), hold `GET /api/stream/game/{id}` open. The last line is
+   embedded page opens a game URL, `/{id}` or `/game/{id}`), hold `GET /api/stream/game/{id}` open. The last line is
    the finished game with `status: {id, name}` and `winner`, then the stream closes. Polling
    continues while streams are open (they may belong to correspondence games).
 3. If a stream closes without a result, or both stream slots are taken, check
@@ -251,12 +251,13 @@ app page, and only in camera mode. The Lichess view cannot reach `window.zz` or 
 | Lichess content    | Separate `WebContentsView`, persistent partition `persist:lichess`, **no preload**, all permission requests and checks denied, DevTools disabled, keyboard focus moved to the app page while hidden                         |
 | Instances          | `requestSingleInstanceLock` per data folder, so two instances never write the same state files                                                                                                                              |
 | Navigation         | Lichess: top-level navigation and redirects allowed only to https `lichess.org`/`*.lichess.org`; other links open in the system browser; popups denied (Lichess popups load in place). App window: no navigation, no popups |
-| IPC                | Single typed `ZzApi` via `contextBridge`; handlers check `senderFrame.url` is our bundled page and coerce argument types                                                                                                    |
+| IPC                | Single typed `ZzApi` via `contextBridge`; handlers check `senderFrame.url` is our bundled page and coerce argument types; pulses and baselines outside 30-220 bpm are rejected                                              |
 | CSP                | `default-src 'none'`; scripts/styles self only; `worker-src blob:` (SDK requirement); `media-src blob: mediastream:`                                                                                                        |
 | Camera             | Permission handler grants `media` only if video-only, from our `file://` page, and after camera-mode consent. Main also gates `requestCamera` and the API key on consent                                                    |
 | Credentials        | `PRESAGE_API_KEY` env or safeStorage-encrypted file; `.env` loaded only in dev and ignored by git                                                                                                                           |
 | Persistence        | Atomic, fsynced writes (temp + rename), mode 0600; `state.json` mirrored to `state.json.bak`; corrupt files quarantined and restored from the backup; with no valid copy (or a damaged cooldown) it restores as locked      |
 | Packaged build     | Electron fuses: RunAsNode, `NODE_OPTIONS` and `--inspect` off; cookie encryption, asar-only loading and asar integrity validation on. `ZZ_DEVTOOLS`, `ZZ_SMOKE_*` and the timing/threshold env tunables are ignored         |
+| Code signing       | Ad hoc signature only (no Developer ID, not notarized); hardened runtime and `build/entitlements.mac.plist` apply once signed with an identity. Gatekeeper rejects the downloaded app until the user allows it              |
 | Logging            | electron-log to the OS log folder; no pulse values or keys are logged                                                                                                                                                       |
 
 ## Persistence and restart
@@ -271,7 +272,8 @@ applies on return). A start time in the future (clock moved back while closed) r
 cooldown at launch, so it still ends by the maximum.
 
 Each `games.json` entry records `consecutiveLosses` after that game (absent in entries logged
-before it existed). On a finished game the state file is written before the log.
+before it existed). On a finished game the state file is written before the log. Log entries
+with an unknown outcome, a non-text speed or an out-of-range date are skipped on load.
 
 ## Decisions (ADR-style)
 
@@ -300,7 +302,7 @@ before it existed). On a finished game the state file is written before the log.
 | ------------------------------------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
 | Secure shell, isolated Lichess view                     | Verified             | Smoke run: Lichess loads; `window.zz` and the SDK bridge are undefined in Lichess and present in the app page                        |
 | Consent -> username -> playing; restart                 | Verified             | Scripted UI run; state persisted; relaunch lands on `playing`                                                                        |
-| Cooldown engine + unlock rule                           | Verified (unit)      | 23 tests in `tests/cooldown.test.ts`                                                                                                 |
+| Cooldown engine + unlock rule                           | Verified (unit)      | 26 tests in `tests/cooldown.test.ts`                                                                                                 |
 | Loss detection from live Lichess                        | Verified             | Real finished game detected as a loss within ~1 s of launch; a live session showed 6 consecutive real games detected from the stream |
 | Lock layer 1 (hide view) + layer 2 (request block)      | Verified             | View hidden while locked; seek POST and lobby socket from the Lichess page failed; a GET succeeded                                   |
 | Sign-in check, logged out                               | Verified             | Smoke run on live lichess.org: `signed-out`; seek POST and lobby socket cancelled; GET 200; sign-in button opened `/login`           |
@@ -317,8 +319,14 @@ before it existed). On a finished game the state file is written before the log.
 | Single instance                                         | Verified             | Second launch on the same data folder exited; the first kept its cooldown                                                            |
 | Timer unlock, refusals, override, restart (Phase 2)     | Verified             | Smoke runs on a seeded cooldown; `games.json` shows `timer` / `override` with durations                                              |
 | Log export                                              | Verified (unit)      | `tests/export.test.ts`; the save dialog itself was not driven                                                                        |
-| Presage live pulse, validation hints, real errors       | **Not verified**     | Needs an API key and a camera session (docs/MANUAL_TESTS.md)                                                                         |
-| Calibration end to end                                  | **Not verified**     | Depends on the above                                                                                                                 |
+| Calibration end to end (real face, real key)            | Verified (manual)    | Nov 7: baseline 80.7 bpm from 60 samples; Nov 8: 77.3 bpm from 36 samples                                                            |
+| Real loss -> lock -> unlock by pulse                    | Verified (manual)    | Nov 7: real Lichess bullet loss locked, unlocked by pulse after 60 s; Nov 8: again by pulse                                          |
+| Override, timer path, restart during a real cooldown    | Verified (manual)    | Nov 8: override used; camera covered -> "too dark" -> timer; restart kept the lock                                                   |
+| Sign-in / sign-out gating on real Lichess               | Verified (manual)    | Nov 8                                                                                                                                |
+| Pulse recovery after "No face in view" with a real face | Verified (unit)      | `tests/renderer/presage-provider.test.ts`; manual step 6.6 not run yet                                                               |
+| Wrong-account sign-in, Wi-Fi off, CSV via save dialog   | **Not verified**     | Manual tests 5.4, 5.5-5.6, 6.8 not run yet                                                                                           |
+| Five-loss escalation; quit during a camera session      | Verified (unit)      | Not yet repeated with a real camera                                                                                                  |
+| Packaged app with a real camera                         | **Not verified**     | Packaged launch + SDK load verified without camera use                                                                               |
 | Camera permission denial path                           | **Not verified**     | Code path exists (`systemPreferences`); needs System Settings                                                                        |
 | Signed / notarized DMG                                  | Not done             | Needs an Apple Developer identity                                                                                                    |
 | Chess.com `GameSource`, breathing visual                | Planned              | See the implementation plan                                                                                                          |

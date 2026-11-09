@@ -9,6 +9,19 @@ Use a throwaway profile so tests do not touch your real data:
 `ZZ_USER_DATA_DIR=/tmp/zz-manual env -u ELECTRON_RUN_AS_NODE npm run dev`. The diagnostic log then
 goes to `/tmp/zz-manual/logs/main.log` instead of `~/Library/Logs/Zwischenzug/`.
 
+## Status (Nov 8, 2026)
+
+Done on real hardware with a real key and real Lichess games:
+
+- Check-in: baseline 80.7 bpm from 60 samples (Nov 7), 77.3 bpm from 36 samples (Nov 8).
+- Real bullet loss -> lock -> unlocked by pulse after 60 s (Nov 7); again by pulse (Nov 8).
+- Override; camera covered -> "Too dark" -> timer; restart during a cooldown kept the lock;
+  sign-in and sign-out gating (Nov 8).
+
+Not run yet: 6.6 pulse recovery after "No face in view", 5.4 wrong-account sign-in,
+5.5-5.6 Wi-Fi off, 6.8 CSV export through the save dialog, five losses in a row (unit-tested
+only), 6.4 quit during a camera session, and the packaged app with a real camera.
+
 ## 1. Presage key (no camera needed)
 
 1. Create an account at <https://physiology.presagetech.com/auth/register> and copy the API

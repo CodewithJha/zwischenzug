@@ -22,7 +22,7 @@ Status legend: [x] done and verified, [~] implemented but not verified, [ ] not 
 ## M3: Cooldown engine
 
 - [x] Pure state machine + unlock rule + derived view
-- [x] 23 unit tests (timing, sustain, signal loss, fallback, cap, override, escalation)
+- [x] 26 unit tests (timing, sustain, signal loss, fallback, cap, override, escalation)
 
 ## M4: Lichess detection and lock
 
@@ -37,15 +37,17 @@ Status legend: [x] done and verified, [~] implemented but not verified, [ ] not 
 
 - [x] Main: lazy native load + `bindSmartSpectraIpc`; packaged native path
 - [x] Preload: SDK bridge bundled into our sandboxed preload
-- [~] `PresageProvider` (renderer SDK, PULSE_RATE only, telemetry off, stable + validation gating)
-- [~] Validation hints and SDK error -> timer fallback mapping
-- [~] Calibration (60 s, median of stable readings, retry / timer-only)
-- [~] Live pulse vs baseline on the cooldown screen
+- [x] `PresageProvider` (renderer SDK, PULSE_RATE only, telemetry off, stable + validation gating)
+- [x] Validation hints and SDK error -> timer fallback mapping (real "too dark" -> timer, Nov 8)
+- [x] Calibration (60 s, median of stable readings, retry / timer-only): real baselines
+      80.7 bpm / 60 samples (Nov 7) and 77.3 bpm / 36 samples (Nov 8)
+- [x] Live pulse vs baseline on the cooldown screen: real losses unlocked by pulse (Nov 7, 8)
 - [x] Diagnostics screen under Settings › Advanced (SDK/key/camera status, session running vs stopped, raw readings, stats)
 - [x] `npm run presage:check`: key check without a camera (bad key -> `kAuthenticationFailed`)
 - [x] Provider: serialized teardown (shared preload port), camera released on SDK errors
-- [ ] **Run with a real API key on this Mac** (docs/MANUAL_TESTS.md): time to first reading,
-      readings per second, share of `stable`, start/stop latency, credit usage per session
+- [x] Run with a real API key on this Mac (Nov 7, 8: calibration, loss -> lock -> pulse unlock)
+- [ ] Record time to first reading, readings per second, share of `stable`, start/stop
+      latency and credit usage per session (docs/MANUAL_TESTS.md)
 
 ## Phase 2 hardening
 
@@ -59,7 +61,8 @@ Status legend: [x] done and verified, [~] implemented but not verified, [ ] not 
 
 - [x] P0: play only with a verified Lichess sign-in as the configured account
       (`/account/info` via the embedded session; logged-out path verified live)
-- [~] P0: signed-in / wrong-account paths (unit-tested; manual test 5)
+- [~] P0: signed-in / wrong-account paths (sign-in and sign-out verified on real Lichess,
+  Nov 8; wrong account and Wi-Fi off unit-tested only, manual test 5)
 - [x] P1: cooldown screen redesign: live bpm vs your band, active unlock path (pulse / waiting
       / timer) with the reason, progress rows; screenshots in `docs/screenshots/`
 - [x] P2: side panel (identity card, labelled facts, sections), calibration idle/progress states
@@ -76,8 +79,8 @@ Status legend: [x] done and verified, [~] implemented but not verified, [ ] not 
 
 ## Next (in priority order)
 
-1. [ ] Verify Presage end to end with a key (M5 boxes above); tune `calibration.minSamples`,
-       `signalTimeoutSec` and `sustainSec` from real data
+1. [~] Presage verified end to end with a key (Nov 7, 8); still tune `calibration.minSamples`,
+   `signalTimeoutSec` and `sustainSec` from more real data
 2. [ ] Verify camera-denied path (System Settings > Camera off)
 3. [ ] Self-experiment: about 30 real games; export the log for the write-up (export ready)
 4. [ ] "You after losses" summary (average pulse change, time to unlock) above the log
