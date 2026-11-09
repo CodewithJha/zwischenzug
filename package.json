@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "description": "Privacy-first chess tilt cooldown: after a Lichess loss, your next game unlocks when your pulse is back near baseline.",
-  "license": "UNLICENSED",
+  "license": "MIT",
+  "author": "Priyanshu Jha",
+  "repository": "github:CodewithJha/zwischenzug",
   "main": "dist/main/index.js",
   "engines": {
     "node": ">=22.12"

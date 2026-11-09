@@ -85,6 +85,7 @@ Status legend: [x] done and verified, [~] implemented but not verified, [ ] not 
 6. [~] App icon and cooldown screenshots done; README GIF, demo video
 7. [ ] DEV post (template sections incl. Consent and Data Handling)
 8. [ ] Signed/notarized DMG (needs Apple Developer identity), or document unsigned run steps
+9. [x] MIT license, public README, refined icon; `npm run dev` shows Zwischenzug, not Electron
 
 ## Cut line
 

@@ -1,240 +1,240 @@
+<div align="center">
+
+<img src="build/icon.png" alt="Zwischenzug logo" width="128" height="128">
+
 # Zwischenzug
 
-_The in-between move your rating needs._
+**After a Lichess loss, your next game unlocks when your pulse is back near your baseline.**
 
-Zwischenzug is a desktop app for online chess players. You play Lichess inside the app. When
-you lose a game, Zwischenzug locks new games until you have settled: with your consent, it
-reads your pulse from the webcam (on-device, via the Presage SmartSpectra SDK) and unlocks
-once it is back near your own baseline. If there is no usable camera signal, a timer unlocks
-instead. You can always skip a cooldown by typing a confirmation sentence.
+A privacy-first tilt cooldown for online chess. macOS desktop app built with Electron,
+TypeScript, the Presage SmartSpectra SDK and the Lichess open API.
+
+[![License: MIT](https://img.shields.io/badge/license-MIT-black)](LICENSE)
+![Platform: macOS Apple Silicon](https://img.shields.io/badge/platform-macOS%20arm64-black)
+![Electron 43](https://img.shields.io/badge/Electron-43-black)
+
+</div>
+
+You play Lichess inside Zwischenzug. When you lose, new games are locked. With your consent,
+the app reads your pulse from the webcam, on-device, and unlocks once it has settled back near
+your own baseline. No usable camera signal? A timer unlocks instead. You can always skip a
+cooldown by typing a confirmation sentence.
 
 The camera is **never on while you play**: only during a one-minute check-in and on the
 cooldown screen after a loss.
 
-Built for the [DEV.to Presage SmartSpectra SDK Challenge 2026](https://dev.to/challenges/presage-2026-11-04).
-
 > Zwischenzug is a habit tool, not a medical device. It does not diagnose, treat or monitor
-> any condition, and it does not claim to detect "tilt". It only compares your current
-> pulse reading with your own baseline.
+> any condition, and it does not claim to detect "tilt". It only compares your current pulse
+> reading with your own baseline.
+
+## Problem and motivation
+
+Online chess makes the next game one click away. After a painful loss, the impulsive requeue
+("one more to win it back") is where losing streaks start. Willpower is weakest exactly then,
+so Zwischenzug puts a short, physiological pause between the loss and the next game: not a
+fixed penalty, but "wait until you have actually calmed down", with a timer as the floor and a
+ceiling. The time floors (one minute, and a suggested 30-minute break after five losses in a
+row) follow [romanbreyten/chess-tilt](https://github.com/romanbreyten/chess-tilt).
+
+## How it works
+
+```mermaid
+flowchart LR
+  A[Consent] --> B[Lichess username]
+  B --> C[1-minute check-in<br/>baseline pulse]
+  C --> D[Play on Lichess<br/>inside the app]
+  D -- loss detected --> E[Cooldown<br/>new games locked]
+  E -- pulse near baseline for 15 s<br/>after at least 60 s --> D
+  E -- no valid reading for 3 min,<br/>or 15 min maximum --> D
+  E -- typed override --> D
+```
+
+1. **Check-in**: one minute of pulse readings sets your personal baseline (median of stable
+   readings).
+2. **Loss detection**: the app follows your Lichess public game stream and notices a finished
+   game within seconds.
+3. **Lock**: the Lichess view is replaced by the cooldown screen; requests that would start a
+   new game (seeks, challenges, rematches) are blocked at the network layer as a second layer.
+4. **Unlock**: when your pulse stays within baseline + max(5 bpm, 7%) for 15 s, after a
+   60 s minimum. Without a valid reading for 3 minutes the timer unlocks; 15 minutes is the hard
+   maximum. All thresholds are configurable.
+
+## Key features
+
+- **Pulse-gated cooldown** after every loss, with a live bpm readout against your band.
+- **Timer fallback** that always works: timer-only mode, no key, no face, poor light.
+- **Escape hatch**: skip any cooldown by typing a sentence (logged as an override).
+- **Sign-in guard**: games stay blocked until the embedded Lichess session is confirmed to be
+  the account you chose, so you cannot play on a second account inside the app.
+- **Escalation**: after five losses in a row, suggests a longer break.
+- **Local game log** with CSV/JSON export, and **Delete all my data** in one click.
+- **Diagnostics** screen: SDK status, key present, camera permission, live raw readings.
+
+## Screenshots
 
 ![Cooldown screen: live pulse back near baseline, 9 of 15 seconds held](docs/screenshots/cooldown-recovering.png)
 
-The cooldown screen shows one status line, one big number and one progress bar. **Live pulse**
-(green) shows your bpm against your band; **Timer** shows the countdown and the plain reason
-(timer only, no baseline, no API key, no face, too dark). More in
-[docs/screenshots/](docs/screenshots/):
+| Consent                                           | Check-in                                      |
+| ------------------------------------------------- | --------------------------------------------- |
+| ![Consent](docs/screenshots/consent.png)          | ![Check-in](docs/screenshots/calibration.png) |
+| **Cooldown, timer fallback (no face)**            | **Side panel**                                |
+| ![No face](docs/screenshots/cooldown-no-face.png) | ![Side panel](docs/screenshots/panel.png)     |
 
-| Screen              | File                                                                                                                               |
-| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| Consent             | [consent.png](docs/screenshots/consent.png)                                                                                        |
-| Lichess account     | [setup.png](docs/screenshots/setup.png)                                                                                            |
-| Check-in            | [calibration.png](docs/screenshots/calibration.png)                                                                                |
-| Cooldown (pulse)    | [cooldown-pulse.png](docs/screenshots/cooldown-pulse.png), [cooldown-waiting.png](docs/screenshots/cooldown-waiting.png)           |
-| Cooldown (timer)    | [cooldown-no-face.png](docs/screenshots/cooldown-no-face.png), [cooldown-timer-only.png](docs/screenshots/cooldown-timer-only.png) |
-| Side panel          | [panel.png](docs/screenshots/panel.png), [panel-settings.png](docs/screenshots/panel-settings.png)                                 |
-| Sign-in bar         | [panel-signed-out.png](docs/screenshots/panel-signed-out.png)                                                                      |
-| Lichess unreachable | [lichess-offline.png](docs/screenshots/lichess-offline.png)                                                                        |
-| Diagnostics         | [diagnostics.png](docs/screenshots/diagnostics.png)                                                                                |
+More in [docs/screenshots/](docs/screenshots/). The pulse-path cooldowns
+(`cooldown-recovering`, `cooldown-pulse`, `cooldown-waiting`), `panel.png` and
+`panel-settings.png` are **simulated**: real renderer views fed crafted app states, with a
+placeholder camera image. The others are scripted runs of the app with a temporary profile.
+The Lichess area is empty in all of them because the embedded lichess.org view is captured
+separately.
 
-The pulse-path cooldowns, `panel.png` and `panel-settings.png` are **simulated**: real
-renderer views fed crafted app states, with a placeholder camera image. The others are
-scripted smoke runs of the app with a temporary profile. The Lichess area is empty in all of
-them because the embedded lichess.org view is captured separately.
+## Demo video
 
-## Status
+_Coming soon._
 
-See [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md) for milestone status and
-[ARCHITECTURE.md](ARCHITECTURE.md) for design, security model and what is verified.
+## Architecture
 
-Short version: the app shell, consent, Lichess loss detection, the lock, the cooldown engine,
-the timer fallback, the override, the game log, delete-all and restart persistence are
-implemented and verified (unit tests plus scripted runs against live lichess.org). The Presage
-SDK **loads and binds** on macOS Apple Silicon and rejects a bad key as expected, but **live
-pulse measurement has not been verified** yet because it needs a real Presage API key and a
-camera session. [docs/MANUAL_TESTS.md](docs/MANUAL_TESTS.md) has the steps.
+Three processes with a narrow, typed IPC surface: the **main process** owns state, the
+cooldown engine, the Lichess watcher and the request lock; the sandboxed **app renderer** runs
+the UI and the SmartSpectra SDK; **Lichess** runs in a separate, permission-less
+`WebContentsView`. Pure logic (cooldown engine, parsing, persistence) lives in `src/core/` and
+is unit-tested without Electron. See [ARCHITECTURE.md](ARCHITECTURE.md) for the design, the
+security model and what is verified.
+
+## Tech stack
+
+Electron 43 · TypeScript (strict) · esbuild · Vitest · ESLint + Prettier · Presage SmartSpectra
+Node SDK 3.4 · Lichess API · electron-builder · electron-log
 
 ## Requirements
 
-- macOS on Apple Silicon (the only platform tested; the SDK also supports Linux x64/arm64 with
-  glibc >= 2.35 and Windows x64)
-- Node.js >= 22.12 (developed with Node 26, npm 11)
-- A webcam and a Presage API key (optional: without one, cooldowns use the timer)
+- macOS on Apple Silicon (the only platform tested)
+- Node.js >= 22.12
+- A webcam
+- A [Presage API key](https://physiology.presagetech.com) (optional: without one, cooldowns use
+  the timer)
 - A Lichess account
 
-## Setup
+## Install and setup
 
 ```bash
-git clone <this repo> zwischenzug && cd zwischenzug
+git clone https://github.com/CodewithJha/zwischenzug.git
+cd zwischenzug
 npm install
-cp .env.example .env    # then put your Presage key in .env (optional, dev only)
-npm run app
+npm run app      # builds release/mac-arm64/Zwischenzug.app and opens it
 ```
 
-## Run
-
-- **`npm run app`** builds the real app (`release/mac-arm64/Zwischenzug.app`) and opens it.
-  This is the user-facing build: named Zwischenzug in the menu bar, Dock, app switcher and
-  About panel, with its own icon and a minimal menu (no reload or developer tools). It does not
-  read `.env`; paste your Presage key under **Settings** in the side panel once.
-- **`npm run dev`** runs from source with the stock Electron binary, for development. The menu
-  items say Zwischenzug and a View menu adds Reload and DevTools, but the bold menu-bar title,
-  Dock tooltip and app switcher show **Electron**, because they come from Electron's own app
-  bundle.
-
 `npm install` downloads the SmartSpectra native runtime for every supported platform (a few
-hundred MB). `package.json#allowScripts` approves the install scripts that are needed
-(Electron binary download, esbuild, koffi, protobufjs). If your npm skipped the Electron
-download, run `node node_modules/electron/install.js`.
+hundred MB). `package.json#allowScripts` approves the install scripts that are needed. If npm
+skipped the Electron download, run `node node_modules/electron/install.js`.
 
-If you launch from a VS Code or Cursor integrated terminal, `ELECTRON_RUN_AS_NODE=1` may be set
-and Electron will exit immediately. Use `env -u ELECTRON_RUN_AS_NODE npm run dev`.
+First run: choose **Allow camera between games** or **Timer only**, enter your Lichess
+username, do the one-minute check-in, then sign in to Lichess in the left pane and play.
 
-### Getting a Presage API key
+### Presage API key
 
-1. Create a free account at <https://physiology.presagetech.com/auth/register> (the link the
-   challenge page uses).
-2. Copy your API key.
-3. Either put it in `.env` as `PRESAGE_API_KEY=...` (development), or paste it into the app
-   (**Settings** in the side panel, or the check-in screen). Keys entered in the app are encrypted with the OS keychain
-   (Electron `safeStorage`) and stored in the app's data folder. The key is never in source.
-   `PRESAGE_API_KEY` wins over a saved key.
-4. `npm run presage:check` confirms Presage accepts the key without using the camera (blank
-   frames for 20 s; the key is never printed).
-5. In the app, **Settings › Advanced › Pulse diagnostics** (or **Troubleshoot** on the
-   check-in screen after a failure) shows whether the SDK loaded, whether a key is present,
-   the OS camera permission, and a live measurement with raw readings, time to first reading,
-   readings per second and the share of stable readings. It says **Presage session running**
-   only while a session is actually running, and **Stopped** with the reason otherwise.
-   Readings on that screen are not saved.
+1. Create an account at <https://physiology.presagetech.com> and copy your API key.
+2. Either:
+   - **Packaged app**: paste it under **Settings** in the side panel (or on the check-in
+     screen). It is encrypted with the macOS keychain (Electron `safeStorage`) and stored in the
+     app's data folder.
+   - **Development**: `cp .env.example .env` and set `PRESAGE_API_KEY=...`. `.env` is git-ignored,
+     read only by dev runs, and wins over a saved key.
+3. `npm run presage:check` confirms Presage accepts the key without the camera (blank frames for
+   about 20 s; the key is never printed).
 
-Note: Presage's sample notes that some keys are not enabled for cardio metrics. Zwischenzug
-requests only `PULSE_RATE`. If your key is not provisioned for it, the SDK reports an error,
-the app shows it and falls back to the timer.
+Zwischenzug requests only `PULSE_RATE`. If your key is not provisioned for it, the app shows the
+SDK error and falls back to the timer.
 
-### First run
+## Development
 
-1. **Consent**: choose "Allow camera between games" or "Timer only".
-2. **Lichess username**: the account whose public game feed is watched.
-3. **Check-in** (camera mode): sit as you usually play, light in front of you, one minute.
-4. **Play**: sign in to Lichess in the left pane as that account and play normally. Until the
-   app has confirmed that the embedded Lichess session is signed in as that account, new games
-   are blocked and a bar above Lichess says "Sign in to Lichess as @username to play".
-   Browsing and the sign-in page always work. Zwischenzug never sees your Lichess password: it
-   asks lichess.org who is signed in, using the embedded session's own cookies.
+| Command                 | What it does                                                      |
+| ----------------------- | ----------------------------------------------------------------- |
+| `npm run dev`           | Build and run from source (as "Zwischenzug", see below)           |
+| `npm run dev:raw`       | Build and run with the stock Electron app                         |
+| `npm run check`         | Typecheck + lint + format check + unit tests                      |
+| `npm test`              | Vitest unit tests                                                 |
+| `npm run build`         | Bundle main, preload and renderer into `dist/` with esbuild       |
+| `npm run dist:dir`      | Unsigned, unpacked macOS app in `release/`                        |
+| `npm run dist:mac`      | macOS arm64 DMG (needs a signing identity for distribution)       |
+| `npm run app`           | `dist:dir`, then open the app                                     |
+| `npm run icon`          | Regenerate `build/icon.png` and `icon.icns` from `build/icon.svg` |
+| `npm run presage:check` | Check the Presage key from env/`.env` without a camera            |
 
-## Scripts
+`npm run dev` launches a renamed copy of Electron.app (`.scratch/Zwischenzug.app`, an APFS
+clone re-signed ad hoc) so the Dock, menu bar and app switcher say Zwischenzug. macOS treats it
+as its own app: it asks for camera access once, and again whenever the copy is rebuilt after an
+Electron or icon change; a Presage key saved in the app may trigger a one-time keychain prompt.
 
-| Script                            | What it does                                                      |
-| --------------------------------- | ----------------------------------------------------------------- |
-| `npm run app`                     | Build the packaged app and open it (the user-facing build)        |
-| `npm run dev`                     | Build all bundles and launch Electron                             |
-| `npm run build`                   | Build `dist/` (main, preload, renderer) with esbuild              |
-| `npm start`                       | Launch the last build                                             |
-| `npm run typecheck`               | `tsc` for the Node (main/preload/core) and web (renderer) configs |
-| `npm run lint`                    | ESLint (typescript-eslint strict + Prettier compatibility)        |
-| `npm run format` / `format:check` | Prettier                                                          |
-| `npm test`                        | Vitest unit tests                                                 |
-| `npm run check`                   | typecheck + lint + format check + tests                           |
-| `npm run presage:check`           | Check the Presage key from env/`.env` without a camera            |
-| `npm run dist:dir`                | Unsigned unpacked macOS app in `release/`                         |
-| `npm run icon`                    | Regenerate `build/icon.png` and `icon.icns` from `build/icon.svg` |
-| `npm run dist:mac`                | macOS arm64 DMG (needs signing identity for distribution)         |
+Tuning defaults live in [`src/core/config.ts`](src/core/config.ts) and can be overridden with
+environment variables (see [.env.example](.env.example)) or a `zwischenzug.config.json` in the
+app data folder. Use `ZZ_USER_DATA_DIR=/tmp/zz-profile` for a throwaway profile. Steps that
+need a key, a camera or a person are in [docs/MANUAL_TESTS.md](docs/MANUAL_TESTS.md).
 
-## Configuration
+## Privacy: consent and data handling
 
-Defaults live in [`src/core/config.ts`](src/core/config.ts). Override them with an optional
-`zwischenzug.config.json` in the app data folder
-(macOS: `~/Library/Application Support/zwischenzug/`), or with environment variables (see
-[.env.example](.env.example)). Environment wins over the file.
+- **Consent first.** Nothing uses the camera until you choose "Allow camera between games".
+  "Timer only" never touches it.
+- **Camera only between games**: during the check-in, on the cooldown screen and on the
+  diagnostics screen when you start a measurement. The app page is the only page allowed to
+  request it (video only). Lichess gets no device permissions.
+- **On-device processing.** The SmartSpectra SDK estimates pulse on this computer. No video or
+  frames are uploaded or saved. Presage's servers are contacted to validate the API key and
+  record usage (device pairing and usage verification), never with video. SDK telemetry is off.
+- **Stored locally** (`~/Library/Application Support/Zwischenzug/`): consent choice, Lichess
+  username, baseline pulse, and a game log (result, losses in a row, baseline, first pulse
+  after the loss, time to unlock, unlock reason). Pulse values are not written to the log file.
+- **Network**: lichess.org (the site, its public API to detect finished games, and
+  `/account/info` with the embedded session's cookies to check who is signed in) and Presage's
+  key and usage checks. Nothing else. Zwischenzug never sees your Lichess password.
+- **Delete all my data** (side panel) removes the game log, baseline, username and consent,
+  damaged copies of those files, the saved Presage key, the diagnostic log files and the
+  embedded Lichess session (you are signed out). It is unavailable during an active cooldown.
+  It keeps your own `zwischenzug.config.json`, a fresh empty state file, Chromium's cache for
+  the app window (no personal data) and `PRESAGE_API_KEY` if set in the environment.
+- **Export** (CSV or JSON) happens only when you ask, to a file you choose.
 
-| Setting                                              | Default                                       | Meaning                                                                                  |
-| ---------------------------------------------------- | --------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| `cooldown.minWaitSec`                                | 60                                            | No unlock before this, however calm                                                      |
-| `cooldown.toleranceBpm` / `tolerancePct`             | 5 / 7                                         | Settled = pulse <= baseline + max(5 bpm, 7%)                                             |
-| `cooldown.sustainSec`                                | 15                                            | Settled for this long, with a fresh signal                                               |
-| `cooldown.fallbackSec`                               | 180                                           | Timer unlock after this long without a valid reading (from the loss or the last reading) |
-| `cooldown.maxSec`                                    | 900                                           | Hard ceiling, never locked longer                                                        |
-| `cooldown.escalateAfterLosses` / `suggestedPauseMin` | 5 / 30                                        | Suggest a longer break                                                                   |
-| `cooldown.overrideSentence`                          | "I choose to skip this cooldown and play now" | Typed to skip                                                                            |
-| `calibration.durationSec` / `minSamples`             | 60 / 10                                       | Check-in length, minimum stable readings                                                 |
-| `lichess.pollIntervalSec`                            | 10                                            | Backup polling interval (min 3)                                                          |
-| `presage.enableTelemetry`                            | false                                         | SDK aggregate telemetry (upstream default is on)                                         |
+## Limitations
 
-## Privacy summary
+- **Self-control, not enforcement.** You can quit the app and play in a browser or on your
+  phone. The lock makes the impulsive requeue harder; it cannot make it impossible. Moving the
+  system clock forward while the app is closed shortens a cooldown.
+- **Live pulse not yet verified end to end** on a real face (needs a key and a camera session;
+  see [docs/MANUAL_TESTS.md](docs/MANUAL_TESTS.md)). The SDK loads, binds and rejects a bad
+  key as expected; the timer path is fully verified.
+- **Starting the camera pauses the app** for about 2-5 s while the SDK session starts, and
+  quitting during a measurement waits up to 10 s for it to stop.
+- **Detection latency.** A rematch clicked faster than Lichess reports the game end (sub-second
+  to a few seconds) can still go through.
+- **Lichess internals.** The request-blocking layer depends on Lichess URL paths that can
+  change; the primary lock (hiding the Lichess view) does not. If the sign-in check endpoint
+  changes, play stays blocked (fail closed).
+- **Lichess only**, macOS Apple Silicon only. The breathing guide is a fixed pace, not a
+  measurement.
+- **Dev environment**: if launched from a VS Code or Cursor terminal, `ELECTRON_RUN_AS_NODE`
+  may be set; `npm run dev` clears it, other Electron commands need
+  `env -u ELECTRON_RUN_AS_NODE`.
 
-- **Camera**: used only during the check-in and on the cooldown screen, after explicit consent.
-  The app page is the only page allowed to request it (video only). Lichess has no device
-  permissions at all.
-- **Processing**: on-device by the SmartSpectra SDK. No video or frames are uploaded or saved.
-  The SDK contacts Presage to check the API key and usage (seen in its logs: device pairing
-  and usage verification). SDK telemetry is disabled.
-- **Stored locally** (app data folder): consent choice, Lichess username, baseline pulse, and a
-  game log (result, baseline, first pulse reading after the loss, time to unlock, unlock reason).
-  Pulse values are not written to the diagnostic log file.
-- **Delete**: "Delete all my data" in the side panel removes the game log, baseline, username
-  and consent, quarantined damaged copies of those files, the saved Presage key, the diagnostic
-  log files and the embedded Lichess session (cookies, storage, cache: you are signed out). It
-  is not available during an active cooldown, so it cannot be used to skip one. Kept: your own
-  `zwischenzug.config.json` (the app never writes it), a fresh empty `state.json` (+ `.bak`),
-  Chromium's cache for the app window (no personal data), and `PRESAGE_API_KEY` if you set it
-  in the environment.
-- **Network**: lichess.org (the site itself, its public API to detect finished games, and
-  `/account/info` with the embedded session's cookies to check who is signed in) and
-  Presage's key and usage checks. Nothing else.
-- **Export**: "Export CSV" / "Export JSON" in the side panel save the game log (oldest first:
-  result, losses in a row, baseline, pulse at loss, time to unlock, unlock reason) to a file
-  you choose. Nothing is exported automatically.
+**Not medical advice.** Zwischenzug is not a medical device and its readings are estimates.
+Do not use it to make health decisions.
 
-## Known limitations
+## Hackathon
 
-- **Self-control, not enforcement.** You can quit the app, play in a browser, or delete the
-  state file. The lock makes the impulsive requeue harder; it cannot make it impossible.
-  Changing the system clock while the app runs has no effect, but moving it forward while
-  the app is closed (or while the computer sleeps) does shorten a cooldown.
-- **SDK start pauses the main process.** Starting a Presage session blocks for about 2-5 s
-  (measured with the main-process SDK), so the app can feel briefly unresponsive when the
-  check-in, diagnostics or a cooldown starts the camera.
-- **Quit waits for the camera session.** Quitting while Presage is measuring waits for the
-  native session to shut down (measured up to ~3 s, capped at 10 s); quitting sooner aborts
-  the process.
-- **Detection latency.** Game end is detected from Lichess's public game stream (sub-second to
-  a few seconds). A click on "rematch"/"new opponent" faster than that can still go through.
-- **Lichess internals.** The request-blocking layer uses Lichess URL paths and sockets that can
-  change without notice. The primary lock (hiding the Lichess view) does not depend on them.
-  The sign-in check uses `/account/info`, an endpoint built for Lichess's old mobile app; if
-  Lichess removes or changes it, play stays blocked (fail closed) and the bar says why.
-- **lichess.org unreachable.** If the Lichess page fails to load (offline, timeout), the app
-  shows "Can’t reach lichess.org" with a **Retry now** button and retries after 2 s, 5 s,
-  10 s, then every 30 s, and at once when the network comes back. A load that hangs on a very
-  slow connection is not cut short; it shows "Retrying…" until Chromium gives up or it loads.
-- **Sign-in check latency.** Sign-out and account switches are caught at once (login cookie
-  change); a session that expires on the server side is caught within a minute.
-- **Pulse measurement unverified here.** Time to first reading, how often readings arrive, and
-  how many count as "stable" on a typical laptop webcam still need on-device testing. The
-  10-reading calibration minimum is a guess and configurable.
-- **Pulse after casual losses may barely rise.** The minimum wait and timer still apply. The
-  local log lets you see your own numbers.
-- **Dev builds show "Electron" in the menu bar.** The bold app-menu title, Dock tooltip and app
-  switcher come from the stock Electron bundle; `npm run app` builds the app named Zwischenzug
-  everywhere. A Presage key saved in the app before
-  the rename may need saving again (its keychain entry is tied to the app name);
-  `PRESAGE_API_KEY` in `.env` is unaffected.
-- **Breathing guide is a fixed pace** (in 4, out 6), not a measurement.
-- Only Lichess. Chess.com is a planned second `GameSource`.
-- Tested on macOS Apple Silicon only.
+Built solo for the [Presage SmartSpectra SDK Challenge 2026 on DEV](https://dev.to/challenges/presage-2026-11-04).
 
-## Credits
+## Acknowledgements
 
-- Presage SmartSpectra SDK (`@smartspectra/node-sdk`), integrated following the official
-  Electron quickstart (renderer SDK, SDK preload bridge, `bindSmartSpectraIpc`).
-- Lichess public API: <https://lichess.org/api>.
-- Fonts, self-hosted under the SIL Open Font License 1.1 (licenses in `src/renderer/fonts/`):
-  [Schibsted Grotesk](https://github.com/schibsted/schibsted-grotesk) for text and
-  [Martian Mono](https://github.com/evilmartians/mono) for numbers.
-- Research basis for the time floors (one minute, 30 minutes after five losses):
-  [romanbreyten/chess-tilt](https://github.com/romanbreyten/chess-tilt).
+- [Presage Technologies](https://physiology.presagetech.com) for the SmartSpectra SDK
+  (`@smartspectra/node-sdk`), integrated following its Electron quickstart.
+- [Lichess](https://lichess.org) and its [open API](https://lichess.org/api).
+- Fonts under the SIL Open Font License 1.1 (licenses in `src/renderer/fonts/`):
+  [Schibsted Grotesk](https://github.com/schibsted/schibsted-grotesk) and
+  [Martian Mono](https://github.com/evilmartians/mono).
+- [romanbreyten/chess-tilt](https://github.com/romanbreyten/chess-tilt) for the research behind
+  the time floors.
 
 ## License
 
-Not yet chosen (`UNLICENSED`). The challenge requires a public repository; pick a license
-before publishing.
+Zwischenzug's own source code is [MIT](LICENSE). The Presage SmartSpectra SDK is not part of
+this repository: it is installed from npm and is proprietary software of Presage Technologies,
+used under [Presage's Terms of Service](https://physiology.presagetech.com/tos). Packaged builds
+include it under those terms. Fonts are under the SIL OFL 1.1.
