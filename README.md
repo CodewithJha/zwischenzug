@@ -6,12 +6,12 @@
 
 **After a Lichess loss, your next game unlocks when your pulse is back near your baseline.**
 
-A privacy-first tilt cooldown for online chess: a macOS desktop app built with Electron,
+A privacy-first tilt cooldown for online chess: a desktop app for macOS (and Windows) built with Electron,
 TypeScript, the Presage SmartSpectra SDK and the Lichess open API.
 
 [![CI](https://github.com/CodewithJha/zwischenzug/actions/workflows/ci.yml/badge.svg)](https://github.com/CodewithJha/zwischenzug/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-black)](LICENSE)
-![Platform: macOS Apple Silicon](https://img.shields.io/badge/platform-macOS%20arm64-black)
+![Platform: macOS Apple Silicon | Windows x64](https://img.shields.io/badge/platform-macOS%20arm64%20%7C%20Windows%20x64-black)
 ![Electron 43](https://img.shields.io/badge/Electron-43-black)
 
 </div>
@@ -164,9 +164,17 @@ with design tokens and self-hosted OFL fonts.
 
 ## Download
 
-A prebuilt app for **macOS on Apple Silicon** is attached to the
-[latest release](https://github.com/CodewithJha/zwischenzug/releases/latest)
-(`Zwischenzug-<version>-arm64.dmg`).
+Prebuilt apps are attached to the
+[latest release](https://github.com/CodewithJha/zwischenzug/releases/latest):
+
+| Platform              | File                                      | Status                                                                                                          |
+| --------------------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| macOS (Apple Silicon) | `Zwischenzug-<version>-arm64.dmg`         | Main platform, tested with a real webcam and real games                                                         |
+| Windows 10/11 (x64)   | `Zwischenzug-<version>-win-x64-setup.exe` | Built and launch-checked on CI (app starts, SDK loads, Lichess reachable); camera use not yet tested on Windows |
+
+Both are unsigned builds from a solo hackathon project, so the OS warns on first launch.
+
+### macOS
 
 1. Open the DMG and drag **Zwischenzug** to **Applications**.
 2. The app is not notarized (no Apple Developer ID), so macOS blocks the first launch. Either
@@ -177,6 +185,15 @@ A prebuilt app for **macOS on Apple Silicon** is attached to the
    ```
 3. Launch it, choose **Allow camera between games**, enter your Lichess username, paste your
    Presage API key on the check-in screen, and allow camera access when macOS asks.
+
+### Windows
+
+1. Run the installer. It installs for the current user, no admin needed.
+2. The installer is not code-signed, so Microsoft Defender SmartScreen shows "Windows protected
+   your PC": click **More info**, then **Run anyway**.
+3. Launch Zwischenzug from the Start menu and follow the same first-run steps. If no camera
+   image appears, check **Settings › Privacy & security › Camera** and allow desktop apps to
+   use the camera.
 
 ## How judges can test
 
@@ -241,18 +258,19 @@ until you allow it (see [Download](#download)).
 
 ## Development
 
-| Command                 | What it does                                                      |
-| ----------------------- | ----------------------------------------------------------------- |
-| `npm run dev`           | Build and run from source (shown as "Zwischenzug", see below)     |
-| `npm run dev:raw`       | Build and run with the stock Electron app                         |
-| `npm run check`         | Typecheck + lint + format check + unit tests                      |
-| `npm test`              | Vitest unit tests                                                 |
-| `npm run build`         | Bundle main, preload and renderer into `dist/` with esbuild       |
-| `npm run dist:dir`      | Unsigned, unpacked macOS app in `release/`                        |
-| `npm run dist:mac`      | macOS arm64 DMG (needs a signing identity for distribution)       |
-| `npm run app`           | `dist:dir`, then open the app                                     |
-| `npm run icon`          | Regenerate `build/icon.png` and `icon.icns` from `build/icon.svg` |
-| `npm run presage:check` | Check the Presage key from env/`.env` without a camera            |
+| Command                 | What it does                                                                  |
+| ----------------------- | ----------------------------------------------------------------------------- |
+| `npm run dev`           | Build and run from source (shown as "Zwischenzug", see below)                 |
+| `npm run dev:raw`       | Build and run with the stock Electron app                                     |
+| `npm run check`         | Typecheck + lint + format check + unit tests                                  |
+| `npm test`              | Vitest unit tests                                                             |
+| `npm run build`         | Bundle main, preload and renderer into `dist/` with esbuild                   |
+| `npm run dist:dir`      | Unsigned, unpacked macOS app in `release/`                                    |
+| `npm run dist:mac`      | macOS arm64 DMG (needs a signing identity for distribution)                   |
+| `npm run dist:win`      | Windows x64 NSIS installer (built on Windows; see the Windows build workflow) |
+| `npm run app`           | `dist:dir`, then open the app                                                 |
+| `npm run icon`          | Regenerate `build/icon.png` and `icon.icns` from `build/icon.svg`             |
+| `npm run presage:check` | Check the Presage key from env/`.env` without a camera                        |
 
 `npm run dev` launches a renamed copy of Electron.app (`.scratch/Zwischenzug.app`, an APFS clone
 re-signed ad hoc) so the Dock, menu bar and app switcher say Zwischenzug. macOS asks for camera
@@ -340,7 +358,9 @@ packaged app with a real camera, and the camera-permission-denied path. Steps ar
 - **Lichess internals.** The request-blocking layer depends on Lichess URL paths that can change;
   the primary lock (hiding the Lichess view) does not. If the sign-in check endpoint changes,
   play stays blocked (fail closed).
-- **Scope.** Lichess only, macOS Apple Silicon only. The breathing guide is a fixed pace, not a
+- **Scope.** Lichess only. macOS on Apple Silicon is the tested platform; the Windows x64 build
+  starts and loads the SDK on CI, but camera and pulse use on Windows have not been tested yet.
+  The breathing guide is a fixed pace, not a
   measurement.
 - **Dev environment.** Launched from a VS Code or Cursor terminal, `ELECTRON_RUN_AS_NODE` may be
   set; `npm run dev` clears it, other Electron commands need `env -u ELECTRON_RUN_AS_NODE`.
