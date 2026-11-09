@@ -27,12 +27,14 @@ const RESERVED_PATHS = new Set([
 /**
  * Extracts a game id from a Lichess game URL.
  * Game ids are 8 alphanumerics; player URLs append a 4-char player id (12 total),
- * optionally followed by /white or /black.
+ * optionally followed by /white or /black. Lichess also serves games under /game/{id}.
  */
 export function gameIdFromUrl(raw: string): string | null {
   if (!isLichessUrl(raw)) return null;
   const path = new URL(raw).pathname;
-  const match = /^\/([a-zA-Z0-9]{8})(?:[a-zA-Z0-9]{4})?(?:\/(?:white|black))?\/?$/.exec(path);
+  const match = /^\/(?:game\/)?([a-zA-Z0-9]{8})(?:[a-zA-Z0-9]{4})?(?:\/(?:white|black))?\/?$/.exec(
+    path,
+  );
   if (!match?.[1]) return null;
   if (RESERVED_PATHS.has(match[1].toLowerCase())) return null;
   return match[1];
