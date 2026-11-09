@@ -33,4 +33,12 @@ describe('logToCsv', () => {
   it('quotes cells that contain separators', () => {
     expect(logToCsv([{ ...loss, speed: 'a,"b"' }])).toContain(',"a,""b""",');
   });
+
+  it('neutralises text cells a spreadsheet would run as formulas', () => {
+    for (const evil of ['=1+1', '+1', '-1', '@SUM(A1)', '\tx']) {
+      const row = logToCsv([{ ...loss, gameId: evil }]).split('\n')[1];
+      expect(row?.startsWith(`'${evil}`)).toBe(true);
+    }
+    expect(logToCsv([{ ...loss, gameId: '\rx' }])).toContain(`"'\rx"`);
+  });
 });

@@ -13,8 +13,12 @@ const COLUMNS = [
   'unlock_reason',
 ] as const;
 
+// Spreadsheets run text cells starting with these as formulas.
+const FORMULA_START = /^[=+\-@\t\r]/;
+
 const cell = (v: string | number | null | undefined): string => {
-  const s = v === null || v === undefined ? '' : String(v);
+  let s = v === null || v === undefined ? '' : String(v);
+  if (typeof v === 'string' && FORMULA_START.test(s)) s = `'${s}`;
   return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 };
 
