@@ -37,7 +37,7 @@ jobs:
           Start-Sleep -Seconds 30
           Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
           $log = Join-Path $env:APPDATA 'Zwischenzug/logs/main.log'
-          if (-not (Test-Path $log)) { throw "No log at $log: the app did not start" }
+          if (-not (Test-Path $log)) { throw "No log at ${log}, the app did not start" }
           Get-Content $log | Select-Object -Last 20
           if (-not (Select-String -Path $log -Pattern 'SmartSpectra SDK .* loaded and bound' -Quiet)) {
             throw 'The SmartSpectra SDK did not load in the packaged app'
