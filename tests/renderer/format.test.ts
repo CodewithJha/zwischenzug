@@ -6,6 +6,7 @@ import {
   formatClock,
   formatSec,
   formatWhen,
+  logDetail,
 } from '../../src/renderer/format';
 
 describe('formatBpm', () => {
@@ -72,6 +73,31 @@ describe('describeCooldown', () => {
     expect(describeCooldown({ ...base, unlockReason: 'override', timeToUnlockSec: 12 })).toBe(
       'Skipped after 0:12 · 74 bpm at the loss',
     );
+  });
+});
+
+describe('logDetail', () => {
+  const game = {
+    gameId: 'AAAA0002',
+    endedAt: 0,
+    outcome: 'loss' as const,
+    userColor: 'white' as const,
+    speed: 'bullet',
+    consecutiveLosses: 2,
+  };
+
+  it('a loss with no cooldown record (lost during a cooldown) never says one is running', () => {
+    expect(logDetail({ ...game, cooldown: null })).toBe('');
+  });
+
+  it('describes a recorded cooldown', () => {
+    const cooldown = {
+      baselineBpm: 70,
+      pulseAtLossBpm: null,
+      timeToUnlockSec: 60,
+      unlockReason: 'timer' as const,
+    };
+    expect(logDetail({ ...game, cooldown })).toBe('Unlocked by timer after 1:00');
   });
 });
 

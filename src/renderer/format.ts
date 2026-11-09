@@ -59,3 +59,11 @@ export function describeCooldown(c: NonNullable<GameLogEntry['cooldown']>): stri
       : `${UNLOCKED_BY[c.unlockReason]} after ${after}`;
   return c.pulseAtLossBpm == null ? how : `${how} · ${formatBpm(c.pulseAtLossBpm)} bpm at the loss`;
 }
+
+/**
+ * Detail line under a game in the panel. The panel only shows while no cooldown runs, so a
+ * loss without a cooldown record (lost during another cooldown) gets none.
+ */
+export function logDetail(g: GameLogEntry): string {
+  return g.cooldown ? describeCooldown(g.cooldown) : '';
+}

@@ -1,18 +1,14 @@
 import type { AppSnapshot, GameLogEntry, IdentityView } from '../../shared/types';
 import { statusLine, type DotKind } from '../components';
 import { h, zz, type View } from '../dom';
-import { capitalize, describeCooldown, formatBpm, formatWhen } from '../format';
+import { capitalize, formatBpm, formatWhen, logDetail } from '../format';
 import { apiKeyForm } from './api-key';
 
 const NO_GAMES_YET = 'no games found yet for this account';
 
 function logRow(g: GameLogEntry, now: number): HTMLElement {
   const streak = g.outcome === 'loss' && (g.consecutiveLosses ?? 0) > 1;
-  const detail = g.cooldown
-    ? describeCooldown(g.cooldown)
-    : g.outcome === 'loss'
-      ? 'Cooldown running'
-      : '';
+  const detail = logDetail(g);
   return h(
     'li',
     { class: 'log-row', 'data-outcome': g.outcome },
