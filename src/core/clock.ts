@@ -11,10 +11,13 @@ export interface SteadyClock {
 export function steadyClock(wall: () => number, mono: () => number): SteadyClock {
   let wall0 = wall();
   let mono0 = mono();
+  const now = (): number => wall0 + (mono() - mono0);
   return {
-    now: () => wall0 + (mono() - mono0),
+    now,
+    // Never backwards: a clock set back during sleep must not push "now" before a cooldown
+    // started, which would hold the lock past its maximum.
     resync: () => {
-      wall0 = wall();
+      wall0 = Math.max(wall(), now());
       mono0 = mono();
     },
   };

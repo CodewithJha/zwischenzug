@@ -93,7 +93,8 @@ phase change) -> `calibration` (camera mode without a baseline, or recalibrating
 Engine time comes from a steady clock (`core/clock.ts`): epoch milliseconds advanced by
 `performance.now()` and re-anchored to the wall clock when the computer wakes
 (`powerMonitor` `resume`). Changing the system clock while the app runs therefore neither
-ends nor extends a cooldown.
+ends nor extends a cooldown. Re-anchoring never moves time backwards, so a clock set back
+during sleep cannot hold the lock past its maximum.
 
 Unlock rule details (`core/cooldown.ts`):
 
