@@ -2,7 +2,7 @@ import { app, powerMonitor } from 'electron';
 import path from 'node:path';
 import { steadyClock } from '../core/clock';
 import { IPC } from '../shared/ipc';
-import { freshState, parseLog, parseState } from '../core/persisted';
+import { failClosedState, freshState, parseLog, parseState } from '../core/persisted';
 import { quitAfter } from '../core/quit-guard';
 import { loadConfig } from './config';
 import { cameraPermission, registerIpc } from './ipc';
@@ -53,6 +53,7 @@ app.whenReady().then(() => {
       path.join(dataDir, 'state.json'),
       (raw) => parseState(raw, clock.now()),
       freshState,
+      { backup: true, corrupt: () => failClosedState(clock.now()) },
     ),
     logFile: new JsonFile(path.join(dataDir, 'games.json'), parseLog, () => ({
       version: 1 as const,

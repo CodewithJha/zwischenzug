@@ -83,6 +83,11 @@ export function parseEngine(raw: unknown, now: number): EngineState {
   };
 }
 
+/** For a damaged state file with no valid backup: a cooldown starting now, never "unlocked". */
+export function failClosedState(now: number): PersistedState {
+  return { ...freshState(), engine: parseEngine({ phase: 'cooldown' }, now) };
+}
+
 export function parseState(raw: unknown, now: number): PersistedState | null {
   if (!isRec(raw) || raw.version !== 1) return null;
   return { version: 1, profile: parseProfile(raw.profile), engine: parseEngine(raw.engine, now) };

@@ -250,7 +250,7 @@ app page, and only in camera mode. The Lichess view cannot reach `window.zz` or 
 | CSP                | `default-src 'none'`; scripts/styles self only; `worker-src blob:` (SDK requirement); `media-src blob: mediastream:`                                                                                                        |
 | Camera             | Permission handler grants `media` only if video-only, from our `file://` page, and after camera-mode consent. Main also gates `requestCamera` and the API key on consent                                                    |
 | Credentials        | `PRESAGE_API_KEY` env or safeStorage-encrypted file; `.env` loaded only in dev and ignored by git                                                                                                                           |
-| Persistence        | Atomic writes (temp + rename), mode 0600; corrupt files quarantined; a damaged cooldown restores as locked                                                                                                                  |
+| Persistence        | Atomic, fsynced writes (temp + rename), mode 0600; `state.json` mirrored to `state.json.bak`; corrupt files quarantined and restored from the backup; with no valid copy (or a damaged cooldown) it restores as locked      |
 | Logging            | electron-log to the OS log folder; no pulse values or keys are logged                                                                                                                                                       |
 
 ## Persistence and restart
