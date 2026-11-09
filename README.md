@@ -132,7 +132,20 @@ More in [docs/screenshots/](docs/screenshots/).
 
 ## Demo video
 
-> **Placeholder.** The demo video has not been published yet; a link will be added here.
+<p align="center">
+  <a href="https://www.youtube.com/watch?v=qnOiJMkBo1s">
+    <img src="https://img.youtube.com/vi/qnOiJMkBo1s/maxresdefault.jpg" alt="Zwischenzug demo video on YouTube" width="100%">
+  </a>
+</p>
+
+**[Watch the 2-minute demo on YouTube](https://www.youtube.com/watch?v=qnOiJMkBo1s).** It shows one
+real session: the check-in, a real Lichess loss, the lock, live pulse against the baseline and the
+unlock by pulse. The footage and pulse readings are real. The face is blurred, sped-up parts are
+labelled, and the narration is AI-generated (Kokoro TTS).
+
+| Check-in (live pulse)               | Loss, then lock                              | Unlocked by pulse                                  |
+| ----------------------------------- | -------------------------------------------- | -------------------------------------------------- |
+| ![Check-in](docs/media/checkin.gif) | ![Loss to lock](docs/media/loss-to-lock.gif) | ![Unlock by pulse](docs/media/unlock-by-pulse.gif) |
 
 ## Architecture
 
@@ -297,11 +310,12 @@ camera; no real games): loss to lock to timer unlock, override, restart during a
 recovery from a truncated state file, Delete all, logged-out play blocked on real lichess.org,
 opening an old game does not lock, and the packaged app's hardening.
 
-**Manual, with a real webcam, a real Presage key and real Lichess games** (Nov 7-8, 2026):
+**Manual, with a real webcam, a real Presage key and real Lichess games** (Nov 7-9, 2026):
 
-- Calibration: baseline 80.7 bpm from 60 samples, and 77.3 bpm from 36 samples.
+- Calibration: baselines of 80.7 bpm (60 samples), 77.3 bpm (36) and 77.5 bpm (59).
 - Real bullet losses detected within seconds, new games locked, cooldown screen with live pulse,
-  **unlocked by pulse** after the 60 s minimum (twice).
+  **unlocked by pulse** after the 60 s minimum (three times; in the recorded demo the pulse was
+  79.4 bpm at the loss and the unlock came after 64 s).
 - Timer path (camera covered, "too dark"), typed override, and restart during a real cooldown
   (the lock and its start time were kept).
 - Sign-in and sign-out gating on real Lichess.
