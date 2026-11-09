@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zwischenzug system architecture · Zwischenzug</title>
+  <link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600&family=Martian+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:  #0a0a0a;
+      --color-ink:    #f2f2f2;
+      --color-muted:  #a8a8a8;
+      --color-accent: #4cf28c;
+      --font-sans:    'Schibsted Grotesk','Helvetica Neue',Helvetica,Arial,sans-serif;
+      --font-mono:    'Martian Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+    }
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-paper);
+      color: var(--color-ink);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 2rem;
+    }
+    .frame { max-width: 1040px; width: 100%; min-width: 0; }
+    .diagram-container { width: 100%; overflow-x: auto; }
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-muted);
+      margin-bottom: 0.5rem;
+    }
+    h1 {
+      font-family: var(--font-sans);
+      font-size: clamp(1.5rem, 2.4vw + 0.75rem, 2rem);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      color: var(--color-ink);
+      margin-bottom: 0.5rem;
+    }
+    .subtitle { color: var(--color-muted); font-size: 0.9375rem; line-height: 1.5; max-width: 72ch; margin-bottom: 1.5rem; }
+    svg { width: 100%; min-width: 960px; height: auto; display: block; }
+    svg text { font-family: 'Schibsted Grotesk','Helvetica Neue',Helvetica,Arial,sans-serif; }
+    .nm { font-size: 12px; font-weight: 600; fill: #f2f2f2; }
+    .hd { font-size: 14px; font-weight: 600; fill: #f2f2f2; }
+    .sb { font-family: 'Martian Mono',ui-monospace,SFMono-Regular,Menlo,monospace; font-size: 9px; fill: #a8a8a8; }
+    .tg { font-family: 'Martian Mono',ui-monospace,SFMono-Regular,Menlo,monospace; font-size: 7px; font-weight: 500; letter-spacing: 0.08em; }
+    .al { font-family: 'Martian Mono',ui-monospace,SFMono-Regular,Menlo,monospace; font-size: 8px; letter-spacing: 0.06em; }
+    .zl { font-family: 'Martian Mono',ui-monospace,SFMono-Regular,Menlo,monospace; font-size: 7px; font-weight: 500; letter-spacing: 0.14em; }
+    .lg { font-size: 9px; fill: #a8a8a8; }
+    .lgh { font-family: 'Martian Mono',ui-monospace,SFMono-Regular,Menlo,monospace; font-size: 8px; letter-spacing: 0.18em; fill: #a8a8a8; }
+    @media print {
+      .diagram-container { overflow-x: visible; }
+      svg { min-width: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Architecture · Zwischenzug</p>
+    <h1>Zwischenzug system architecture</h1>
+    <p class="subtitle">One Electron window, three processes. The main process owns state, the cooldown engine and the lock; the sandboxed app renderer runs the UI and camera; Lichess runs in an isolated view with no preload and no permissions.</p>
+    <div class="diagram-container">
+      <svg viewBox="0 0 960 600" width="960" height="600" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="architecture-title architecture-desc">
+        <title id="architecture-title">Zwischenzug system architecture</title>
+        <desc id="architecture-desc">Architecture of Zwischenzug: the app renderer reaches the main process only through the preload bridge, the main process holds the session and cooldown engine, Lichess watcher, request lock and native Presage SDK, the Lichess view is isolated behind a trust boundary, and only lichess.org and Presage key checks leave the Mac.</desc>
+        <defs>
+          <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto-start-reverse"><polygon points="0 0, 8 3, 0 6" fill="#a8a8a8"/></marker>
+          <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto-start-reverse"><polygon points="0 0, 8 3, 0 6" fill="#4cf28c"/></marker>
+          <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto-start-reverse"><polygon points="0 0, 8 3, 0 6" fill="#aebfd0"/></marker>
+        </defs>
+
+        <rect width="100%" height="100%" fill="#0a0a0a"/>
+
+        <rect x="40" y="48" width="216" height="216" rx="8" fill="rgba(242,242,242,0.02)" stroke="rgba(242,242,242,0.12)" stroke-width="0.8"/><rect x="48" y="52" width="152" height="12" rx="2" fill="#0a0a0a"/><text class="zl" x="52" y="61" fill="#808080">APP RENDERER · SANDBOXED</text>
+        <rect x="40" y="320" width="216" height="128" rx="8" fill="rgba(201,173,116,0.04)" stroke="#c9ad74" stroke-width="0.8" stroke-dasharray="4,4"/><rect x="48" y="324" width="144" height="12" rx="2" fill="#0a0a0a"/><text class="zl" x="52" y="333" fill="#c9ad74">LICHESS VIEW · ISOLATED</text>
+        <rect x="296" y="48" width="416" height="400" rx="8" fill="rgba(242,242,242,0.02)" stroke="rgba(242,242,242,0.12)" stroke-width="0.8"/><rect x="304" y="52" width="232" height="12" rx="2" fill="#0a0a0a"/><text class="zl" x="308" y="61" fill="#808080">MAIN PROCESS · OWNS STATE AND THE LOCK</text>
+        <line x1="760" y1="48" x2="760" y2="528" stroke="#3d3d3d" stroke-width="1" stroke-dasharray="2,4"/>
+        <text class="zl" x="752" y="40" fill="#808080" text-anchor="end">ON THIS MAC</text>
+        <text class="zl" x="768" y="40" fill="#aebfd0">INTERNET</text>
+        <path d="M240,112 H536" fill="none" stroke="#a8a8a8" stroke-width="1.2" marker-end="url(#arrow)" marker-start="url(#arrow)"/>
+        <path d="M240,208 H312" fill="none" stroke="#a8a8a8" stroke-width="1.2" marker-end="url(#arrow)" marker-start="url(#arrow)"/>
+        <path d="M696,112 H792" fill="none" stroke="#aebfd0" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow-link)"/>
+        <path d="M536,200 H472" fill="none" stroke="#a8a8a8" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <path d="M696,216 H792" fill="none" stroke="#aebfd0" stroke-width="1.2" marker-end="url(#arrow-link)"/>
+        <path d="M352,240 V284 Q352,292 344,292 H164 Q156,292 156,300 V352" fill="none" stroke="#a8a8a8" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <path d="M432,240 V300 Q432,308 440,308 H608 Q616,308 616,316 V352" fill="none" stroke="#a8a8a8" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <path d="M240,388 H536" fill="none" stroke="#a8a8a8" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <path d="M392,240 V380 a8,8 0 0,0 0,16 V472" fill="none" stroke="#a8a8a8" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <path d="M696,388 H848 Q856,388 856,380 V240" fill="none" stroke="#aebfd0" stroke-width="1.2" marker-end="url(#arrow-link)"/>
+        <rect x="340" y="94" width="96" height="12" rx="2" fill="#0a0a0a"/><text class="al" x="388" y="103" fill="#808080" text-anchor="middle">FRAMES · PULSE</text>
+        <rect x="244" y="190" width="64" height="12" rx="2" fill="#0a0a0a"/><text class="al" x="276" y="199" fill="#808080" text-anchor="middle">WINDOW.ZZ</text>
+        <rect x="696" y="94" width="64" height="12" rx="2" fill="#0a0a0a"/><text class="al" x="728" y="103" fill="#aebfd0" text-anchor="middle">KEY CHECK</text>
+        <rect x="480" y="182" width="48" height="12" rx="2" fill="#0a0a0a"/><text class="al" x="504" y="191" fill="#808080" text-anchor="middle">RESULT</text>
+        <rect x="692" y="198" width="72" height="12" rx="2" fill="#0a0a0a"/><text class="al" x="728" y="207" fill="#aebfd0" text-anchor="middle">PUBLIC API</text>
+        <rect x="194" y="274" width="76" height="12" rx="2" fill="#0a0a0a"/><text class="al" x="232" y="283" fill="#808080" text-anchor="middle">HIDE · SHOW</text>
+        <rect x="482" y="290" width="84" height="12" rx="2" fill="#0a0a0a"/><text class="al" x="524" y="299" fill="#808080" text-anchor="middle">PLAY BLOCKED</text>
+        <rect x="434" y="370" width="84" height="12" rx="2" fill="#0a0a0a"/><text class="al" x="476" y="379" fill="#808080" text-anchor="middle">ALL REQUESTS</text>
+        <rect x="398" y="422" width="48" height="12" rx="2" fill="#0a0a0a"/><text class="al" x="422" y="431" fill="#808080" text-anchor="middle">WRITES</text>
+        <rect x="862" y="294" width="36" height="12" rx="2" fill="#0a0a0a"/><text class="al" x="880" y="303" fill="#aebfd0" text-anchor="middle">SITE</text>
+        <rect x="56" y="80" width="184" height="160" rx="6" fill="#0a0a0a"/>
+        <rect x="56" y="80" width="184" height="160" rx="6" fill="#1a1a1a" stroke="#a8a8a8" stroke-width="1"/>
+        <rect x="64" y="86" width="20" height="12" rx="2" fill="none" stroke="rgba(168,168,168,0.45)" stroke-width="0.8"/>
+        <text class="tg" x="74" y="95" fill="#a8a8a8" text-anchor="middle">UI</text>
+        <text class="nm" x="68" y="116" text-anchor="start">App renderer</text>
+        <text class="sb" x="68" y="131" text-anchor="start">screens + PresageProvider</text>
+        <text class="sb" x="68" y="144" text-anchor="start">camera: getUserMedia</text>
+        <line x1="68" y1="149" x2="228" y2="149" stroke="#3d3d3d" stroke-width="0.8"/>
+        <text class="tg" x="68" y="163" fill="#808080" text-anchor="start">PRELOAD BRIDGE</text>
+        <text class="sb" x="68" y="176" text-anchor="start">window.zz (ZzApi)</text>
+        <text class="sb" x="68" y="189" text-anchor="start">__smartspectraBridge</text>
+        <text class="sb" x="68" y="202" text-anchor="start">no Node, contextIsolation</text>
+        <rect x="56" y="352" width="184" height="72" rx="6" fill="#0a0a0a"/>
+        <rect x="56" y="352" width="184" height="72" rx="6" fill="#1a1a1a" stroke="#a8a8a8" stroke-width="1"/>
+        <rect x="64" y="358" width="28" height="12" rx="2" fill="none" stroke="rgba(168,168,168,0.45)" stroke-width="0.8"/>
+        <text class="tg" x="78" y="367" fill="#a8a8a8" text-anchor="middle">WEB</text>
+        <text class="nm" x="148" y="386" text-anchor="middle">Lichess view</text>
+        <text class="sb" x="148" y="401" text-anchor="middle">persist:lichess</text>
+        <text class="sb" x="148" y="414" text-anchor="middle">no preload, no perms</text>
+        <rect x="536" y="80" width="160" height="64" rx="6" fill="#0a0a0a"/>
+        <rect x="536" y="80" width="160" height="64" rx="6" fill="#1a1a1a" stroke="#a8a8a8" stroke-width="1"/>
+        <rect x="544" y="86" width="28" height="12" rx="2" fill="none" stroke="rgba(168,168,168,0.45)" stroke-width="0.8"/>
+        <text class="tg" x="558" y="95" fill="#a8a8a8" text-anchor="middle">SDK</text>
+        <text class="nm" x="616" y="114" text-anchor="middle">SmartSpectra native</text>
+        <text class="sb" x="616" y="129" text-anchor="middle">on-device · koffi</text>
+        <rect x="312" y="176" width="160" height="64" rx="6" fill="#0a0a0a"/>
+        <rect x="312" y="176" width="160" height="64" rx="6" fill="rgba(76,242,140,0.14)" stroke="#4cf28c" stroke-width="1"/>
+        <rect x="320" y="182" width="32" height="12" rx="2" fill="none" stroke="rgba(76,242,140,0.50)" stroke-width="0.8"/>
+        <text class="tg" x="336" y="191" fill="#4cf28c" text-anchor="middle">CORE</text>
+        <text class="nm" x="392" y="210" text-anchor="middle">Session + engine</text>
+        <text class="sb" x="392" y="225" text-anchor="middle">state · step() · log</text>
+        <rect x="536" y="176" width="160" height="64" rx="6" fill="#0a0a0a"/>
+        <rect x="536" y="176" width="160" height="64" rx="6" fill="#1a1a1a" stroke="#a8a8a8" stroke-width="1"/>
+        <rect x="544" y="182" width="36" height="12" rx="2" fill="none" stroke="rgba(168,168,168,0.45)" stroke-width="0.8"/>
+        <text class="tg" x="562" y="191" fill="#a8a8a8" text-anchor="middle">GAMES</text>
+        <text class="nm" x="616" y="210" text-anchor="middle">Lichess game source</text>
+        <text class="sb" x="616" y="225" text-anchor="middle">poll 10 s · 2 streams</text>
+        <rect x="536" y="352" width="160" height="72" rx="6" fill="#0a0a0a"/>
+        <rect x="536" y="352" width="160" height="72" rx="6" fill="#1a1a1a" stroke="#a8a8a8" stroke-width="1"/>
+        <rect x="544" y="358" width="32" height="12" rx="2" fill="none" stroke="rgba(168,168,168,0.45)" stroke-width="0.8"/>
+        <text class="tg" x="560" y="367" fill="#a8a8a8" text-anchor="middle">LOCK</text>
+        <text class="nm" x="616" y="386" text-anchor="middle">Request lock</text>
+        <text class="sb" x="616" y="401" text-anchor="middle">cancels new games:</text>
+        <text class="sb" x="616" y="414" text-anchor="middle">seek·challenge·rematch</text>
+        <rect x="312" y="472" width="384" height="56" rx="6" fill="#0a0a0a"/>
+        <rect x="312" y="472" width="384" height="56" rx="6" fill="rgba(242,242,242,0.05)" stroke="#808080" stroke-width="1"/>
+        <rect x="320" y="478" width="32" height="12" rx="2" fill="none" stroke="rgba(128,128,128,0.60)" stroke-width="0.8"/>
+        <text class="tg" x="336" y="487" fill="#a8a8a8" text-anchor="middle">DISK</text>
+        <text class="nm" x="504" y="504" text-anchor="middle">Local disk · app data folder</text>
+        <text class="sb" x="504" y="519" text-anchor="middle">state.json + .bak · games.json · logs · atomic, 0600</text>
+        <rect x="792" y="80" width="128" height="72" rx="6" fill="#0a0a0a"/>
+        <rect x="792" y="80" width="128" height="72" rx="6" fill="rgba(174,191,208,0.06)" stroke="rgba(174,191,208,0.60)" stroke-width="1"/>
+        <rect x="800" y="86" width="28" height="12" rx="2" fill="none" stroke="rgba(174,191,208,0.45)" stroke-width="0.8"/>
+        <text class="tg" x="814" y="95" fill="#aebfd0" text-anchor="middle">EXT</text>
+        <text class="nm" x="856" y="114" text-anchor="middle">Presage servers</text>
+        <text class="sb" x="856" y="129" text-anchor="middle">key + usage only</text>
+        <text class="sb" x="856" y="142" text-anchor="middle">never video</text>
+        <rect x="792" y="176" width="128" height="64" rx="6" fill="#0a0a0a"/>
+        <rect x="792" y="176" width="128" height="64" rx="6" fill="rgba(174,191,208,0.06)" stroke="rgba(174,191,208,0.60)" stroke-width="1"/>
+        <rect x="800" y="182" width="28" height="12" rx="2" fill="none" stroke="rgba(174,191,208,0.45)" stroke-width="0.8"/>
+        <text class="tg" x="814" y="191" fill="#aebfd0" text-anchor="middle">EXT</text>
+        <text class="nm" x="856" y="210" text-anchor="middle">lichess.org</text>
+        <text class="sb" x="856" y="225" text-anchor="middle">site · public API</text>
+        <line x1="40" y1="548" x2="920" y2="548" stroke="#262626" stroke-width="0.8"/>
+        <text class="lgh" x="40" y="572">LEGEND</text>
+        <rect x="112" y="564" width="16" height="10" rx="2" fill="rgba(76,242,140,0.14)" stroke="#4cf28c" stroke-width="0.8"/>
+        <text class="lg" x="134" y="572">State + lock owner</text>
+        <rect x="236" y="564" width="16" height="10" rx="2" fill="#1a1a1a" stroke="#a8a8a8" stroke-width="0.8"/>
+        <text class="lg" x="258" y="572">App component</text>
+        <rect x="336" y="564" width="16" height="10" rx="2" fill="rgba(242,242,242,0.05)" stroke="#808080" stroke-width="0.8"/>
+        <text class="lg" x="358" y="572">Local files</text>
+        <rect x="428" y="564" width="16" height="10" rx="2" fill="rgba(174,191,208,0.06)" stroke="rgba(174,191,208,0.60)" stroke-width="0.8"/>
+        <text class="lg" x="450" y="572">Internet service</text>
+        <rect x="544" y="564" width="16" height="10" rx="2" fill="rgba(201,173,116,0.05)" stroke="#c9ad74" stroke-width="0.8" stroke-dasharray="3,2"/>
+        <text class="lg" x="566" y="572">Trust boundary</text>
+        <path d="M648,569 H674" fill="none" stroke="#a8a8a8" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <text class="lg" x="682" y="572">IPC / in-process</text>
+        <path d="M776,569 H802" fill="none" stroke="#aebfd0" stroke-width="1.2" marker-end="url(#arrow-link)"/>
+        <text class="lg" x="810" y="572">Network (HTTPS)</text>
+      </svg>
+    </div>
+  </div>
+</body>
+</html>

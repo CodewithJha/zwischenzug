@@ -5,3 +5,5 @@ package-lock.json
 tests/fixtures/
 .scratch/
 .impeccable/
+docs/diagrams/
+docs/illustrations/

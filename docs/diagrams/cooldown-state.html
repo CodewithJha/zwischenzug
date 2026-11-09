@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cooldown lifecycle · Zwischenzug</title>
+  <link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600&family=Martian+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:  #0a0a0a;
+      --color-ink:    #f2f2f2;
+      --color-muted:  #a8a8a8;
+      --color-accent: #4cf28c;
+      --font-sans:    'Schibsted Grotesk','Helvetica Neue',Helvetica,Arial,sans-serif;
+      --font-mono:    'Martian Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+    }
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-paper);
+      color: var(--color-ink);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 2rem;
+    }
+    .frame { max-width: 1040px; width: 100%; min-width: 0; }
+    .diagram-container { width: 100%; overflow-x: auto; }
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-muted);
+      margin-bottom: 0.5rem;
+    }
+    h1 {
+      font-family: var(--font-sans);
+      font-size: clamp(1.5rem, 2.4vw + 0.75rem, 2rem);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      color: var(--color-ink);
+      margin-bottom: 0.5rem;
+    }
+    .subtitle { color: var(--color-muted); font-size: 0.9375rem; line-height: 1.5; max-width: 72ch; margin-bottom: 1.5rem; }
+    svg { width: 100%; min-width: 960px; height: auto; display: block; }
+    svg text { font-family: 'Schibsted Grotesk','Helvetica Neue',Helvetica,Arial,sans-serif; }
+    .nm { font-size: 12px; font-weight: 600; fill: #f2f2f2; }
+    .hd { font-size: 14px; font-weight: 600; fill: #f2f2f2; }
+    .sb { font-family: 'Martian Mono',ui-monospace,SFMono-Regular,Menlo,monospace; font-size: 9px; fill: #a8a8a8; }
+    .tg { font-family: 'Martian Mono',ui-monospace,SFMono-Regular,Menlo,monospace; font-size: 7px; font-weight: 500; letter-spacing: 0.08em; }
+    .al { font-family: 'Martian Mono',ui-monospace,SFMono-Regular,Menlo,monospace; font-size: 8px; letter-spacing: 0.06em; }
+    .zl { font-family: 'Martian Mono',ui-monospace,SFMono-Regular,Menlo,monospace; font-size: 7px; font-weight: 500; letter-spacing: 0.14em; }
+    .lg { font-size: 9px; fill: #a8a8a8; }
+    .lgh { font-family: 'Martian Mono',ui-monospace,SFMono-Regular,Menlo,monospace; font-size: 8px; letter-spacing: 0.18em; fill: #a8a8a8; }
+    @media print {
+      .diagram-container { overflow-x: visible; }
+      svg { min-width: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">State machine · Lifecycle phase map</p>
+    <h1>Cooldown lifecycle</h1>
+    <p class="subtitle">Setup runs once. After every loss the cooldown locks new games until any one unlock rule holds; the arrow labels are the unlock reasons written to the game log. Defaults from src/core/config.ts.</p>
+    <div class="diagram-container">
+      <svg viewBox="0 0 960 600" width="960" height="600" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="cooldown-state-title cooldown-state-desc">
+        <title id="cooldown-state-title">Cooldown lifecycle</title>
+        <desc id="cooldown-state-desc">Lifecycle of Zwischenzug: consent, Lichess username and an optional 60-second check-in lead to playing; a loss starts a cooldown that unlocks by pulse held near baseline for 15 seconds after at least 60 seconds, by a 180-second timer without a reading, by typed override, or by a 15-minute cap, and an app restart restores an active cooldown.</desc>
+        <defs>
+          <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto-start-reverse"><polygon points="0 0, 8 3, 0 6" fill="#a8a8a8"/></marker>
+          <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto-start-reverse"><polygon points="0 0, 8 3, 0 6" fill="#4cf28c"/></marker>
+          <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto-start-reverse"><polygon points="0 0, 8 3, 0 6" fill="#aebfd0"/></marker>
+        </defs>
+
+        <rect width="100%" height="100%" fill="#0a0a0a"/>
+
+        <text class="zl" x="40" y="60" fill="#808080">FIRST RUN</text>
+        <text class="zl" x="632" y="60" fill="#808080">INTERRUPTION</text>
+        <text class="zl" x="40" y="208" fill="#808080">EVERY GAME</text>
+        <rect x="432" y="216" width="488" height="304" rx="8" fill="rgba(242,242,242,0.025)" stroke="#f2f2f2" stroke-width="1.2"/>
+        <path d="M184,108 H240" fill="none" stroke="#a8a8a8" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <path d="M384,108 H440" fill="none" stroke="#a8a8a8" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <path d="M264,144 V216" fill="none" stroke="#a8a8a8" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <path d="M512,144 V168 Q512,176 504,176 H320 Q312,176 312,184 V216" fill="none" stroke="#a8a8a8" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <path d="M656,144 V216" fill="none" stroke="#a8a8a8" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#arrow)"/>
+        <path d="M336,232 H432" fill="none" stroke="#a8a8a8" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <path d="M456,292 H336" fill="none" stroke="#4cf28c" stroke-width="1.4" marker-end="url(#arrow-accent)"/>
+        <path d="M456,356 H336" fill="none" stroke="#a8a8a8" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <path d="M456,420 H336" fill="none" stroke="#a8a8a8" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <path d="M456,484 H336" fill="none" stroke="#a8a8a8" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <rect x="188" y="90" width="48" height="12" rx="2" fill="#0a0a0a"/><text class="al" x="212" y="99" fill="#808080" text-anchor="middle">CHOSEN</text>
+        <rect x="388" y="90" width="48" height="12" rx="2" fill="#0a0a0a"/><text class="al" x="412" y="99" fill="#808080" text-anchor="middle">CAMERA</text>
+        <rect x="186" y="170" width="72" height="12" rx="2" fill="#0a0a0a"/><text class="al" x="222" y="179" fill="#808080" text-anchor="middle">TIMER ONLY</text>
+        <rect x="368" y="158" width="96" height="12" rx="2" fill="#0a0a0a"/><text class="al" x="416" y="167" fill="#808080" text-anchor="middle">BASELINE SAVED</text>
+        <rect x="662" y="174" width="60" height="12" rx="2" fill="#0a0a0a"/><text class="al" x="692" y="183" fill="#808080" text-anchor="middle">RESTORED</text>
+        <rect x="366" y="214" width="36" height="12" rx="2" fill="#0a0a0a"/><text class="al" x="384" y="223" fill="#808080" text-anchor="middle">LOSS</text>
+        <rect x="364" y="274" width="64" height="12" rx="2" fill="#0a0a0a"/><text class="al" x="396" y="283" fill="#4cf28c" text-anchor="middle">BIOMETRIC</text>
+        <rect x="376" y="338" width="40" height="12" rx="2" fill="#0a0a0a"/><text class="al" x="396" y="347" fill="#808080" text-anchor="middle">TIMER</text>
+        <rect x="366" y="402" width="60" height="12" rx="2" fill="#0a0a0a"/><text class="al" x="396" y="411" fill="#808080" text-anchor="middle">OVERRIDE</text>
+        <rect x="358" y="466" width="76" height="12" rx="2" fill="#0a0a0a"/><text class="al" x="396" y="475" fill="#808080" text-anchor="middle">TIMER (CAP)</text>
+        <rect x="40" y="72" width="144" height="72" rx="6" fill="#0a0a0a"/>
+        <rect x="40" y="72" width="144" height="72" rx="6" fill="#1a1a1a" stroke="#a8a8a8" stroke-width="1"/>
+        <rect x="48" y="78" width="36" height="12" rx="2" fill="none" stroke="rgba(168,168,168,0.45)" stroke-width="0.8"/>
+        <text class="tg" x="66" y="87" fill="#a8a8a8" text-anchor="middle">SETUP</text>
+        <text class="nm" x="112" y="106" text-anchor="middle">Consent</text>
+        <text class="sb" x="112" y="121" text-anchor="middle">camera or timer-only</text>
+        <text class="sb" x="112" y="134" text-anchor="middle">nothing runs before</text>
+        <rect x="240" y="72" width="144" height="72" rx="6" fill="#0a0a0a"/>
+        <rect x="240" y="72" width="144" height="72" rx="6" fill="#1a1a1a" stroke="#a8a8a8" stroke-width="1"/>
+        <rect x="248" y="78" width="36" height="12" rx="2" fill="none" stroke="rgba(168,168,168,0.45)" stroke-width="0.8"/>
+        <text class="tg" x="266" y="87" fill="#a8a8a8" text-anchor="middle">SETUP</text>
+        <text class="nm" x="312" y="106" text-anchor="middle">Lichess username</text>
+        <text class="sb" x="312" y="121" text-anchor="middle">account to watch</text>
+        <text class="sb" x="312" y="134" text-anchor="middle">for finished games</text>
+        <rect x="440" y="72" width="144" height="72" rx="6" fill="#0a0a0a"/>
+        <rect x="440" y="72" width="144" height="72" rx="6" fill="#1a1a1a" stroke="#a8a8a8" stroke-width="1"/>
+        <rect x="448" y="78" width="44" height="12" rx="2" fill="none" stroke="rgba(168,168,168,0.45)" stroke-width="0.8"/>
+        <text class="tg" x="470" y="87" fill="#a8a8a8" text-anchor="middle">CAMERA</text>
+        <text class="nm" x="512" y="106" text-anchor="middle">Check-in</text>
+        <text class="sb" x="512" y="121" text-anchor="middle">60 s · ≥ 10 stable</text>
+        <text class="sb" x="512" y="134" text-anchor="middle">median = baseline</text>
+        <rect x="632" y="72" width="192" height="72" rx="6" fill="#0a0a0a"/>
+        <rect x="632" y="72" width="192" height="72" rx="6" fill="rgba(242,242,242,0.02)" stroke="rgba(242,242,242,0.35)" stroke-width="1" stroke-dasharray="4,3"/>
+        <rect x="640" y="78" width="52" height="12" rx="2" fill="none" stroke="rgba(242,242,242,0.30)" stroke-width="0.8"/>
+        <text class="tg" x="666" y="87" fill="#a8a8a8" text-anchor="middle">RELAUNCH</text>
+        <text class="nm" x="728" y="106" text-anchor="middle">App restart</text>
+        <text class="sb" x="728" y="121" text-anchor="middle">cooldown restored</text>
+        <text class="sb" x="728" y="134" text-anchor="middle">start kept · signal reset</text>
+        <rect x="40" y="216" width="296" height="284" rx="6" fill="#0a0a0a"/>
+        <rect x="40" y="216" width="296" height="284" rx="6" fill="#1a1a1a" stroke="#a8a8a8" stroke-width="1"/>
+        <rect x="48" y="222" width="32" height="12" rx="2" fill="none" stroke="rgba(168,168,168,0.45)" stroke-width="0.8"/>
+        <text class="tg" x="64" y="231" fill="#a8a8a8" text-anchor="middle">PLAY</text>
+        <text class="nm" x="52" y="264" text-anchor="start">Playing</text>
+        <text class="sb" x="52" y="279" text-anchor="start">Lichess view visible</text>
+        <text class="sb" x="52" y="292" text-anchor="start">needs verified sign-in</text>
+        <text class="sb" x="52" y="305" text-anchor="start">camera off</text>
+        <line x1="52" y1="310" x2="324" y2="310" stroke="#3d3d3d" stroke-width="0.8"/>
+        <text class="sb" x="52" y="324" text-anchor="start">win / draw: streak = 0</text>
+        <text class="sb" x="52" y="337" text-anchor="start">a win never ends a cooldown</text>
+        <text class="hd" x="448" y="242">Cooldown · new games locked</text>
+        <text class="sb" x="448" y="256">view hidden · seek, challenge, rematch cancelled</text>
+        <rect x="676" y="230" width="228" height="12" rx="2" fill="none" stroke="rgba(201,173,116,0.6)" stroke-width="0.8"/><text class="tg" x="790" y="239" fill="#c9ad74" text-anchor="middle">AFTER 5 LOSSES IN A ROW: SUGGESTS 30 MIN</text>
+        <rect x="456" y="264" width="448" height="56" rx="4" fill="#0a0a0a"/>
+        <rect x="456" y="264" width="448" height="56" rx="4" fill="rgba(76,242,140,0.14)" stroke="#4cf28c" stroke-width="1"/>
+        <text class="nm" x="472" y="286">Pulse path</text>
+        <text class="nm" x="888" y="286" text-anchor="end" fill="#4cf28c">held 15 s</text>
+        <text class="sb" x="472" y="301">pulse ≤ baseline + max(5 bpm, 7%), signal ≤ 5 s old, ≥ 60 s in</text>
+        <text class="sb" x="472" y="313">unstable readings ignored; a stale signal resets the hold</text>
+        <rect x="456" y="328" width="448" height="56" rx="4" fill="#0a0a0a"/>
+        <rect x="456" y="328" width="448" height="56" rx="4" fill="#111111" stroke="#3d3d3d" stroke-width="1"/>
+        <text class="nm" x="472" y="350">Timer fallback</text>
+        <text class="nm" x="888" y="350" text-anchor="end" fill="#f2f2f2">180 s</text>
+        <text class="sb" x="472" y="365">no valid reading for 180 s, from the loss or last reading</text>
+        <text class="sb" x="472" y="377">also: timer-only, no baseline or key, no face, SDK error</text>
+        <rect x="456" y="392" width="448" height="56" rx="4" fill="#0a0a0a"/>
+        <rect x="456" y="392" width="448" height="56" rx="4" fill="#111111" stroke="#3d3d3d" stroke-width="1"/>
+        <text class="nm" x="472" y="414">Override</text>
+        <text class="nm" x="888" y="414" text-anchor="end" fill="#f2f2f2">typed</text>
+        <text class="sb" x="472" y="429">type the confirmation sentence, any time</text>
+        <text class="sb" x="472" y="441">logged as override</text>
+        <rect x="456" y="456" width="448" height="56" rx="4" fill="#0a0a0a"/>
+        <rect x="456" y="456" width="448" height="56" rx="4" fill="#111111" stroke="#3d3d3d" stroke-width="1"/>
+        <text class="nm" x="472" y="478">Hard cap</text>
+        <text class="nm" x="888" y="478" text-anchor="end" fill="#f2f2f2">15 min</text>
+        <text class="sb" x="472" y="493">always unlocks 900 s after the loss</text>
+        <text class="sb" x="472" y="505">logged as timer</text>
+        <line x1="40" y1="548" x2="920" y2="548" stroke="#262626" stroke-width="0.8"/>
+        <text class="lgh" x="40" y="572">LEGEND</text>
+        <rect x="112" y="564" width="16" height="10" rx="2" fill="#1a1a1a" stroke="#a8a8a8" stroke-width="0.8"/>
+        <text class="lg" x="134" y="572">Phase</text>
+        <rect x="176" y="564" width="16" height="10" rx="2" fill="rgba(242,242,242,0.02)" stroke="rgba(242,242,242,0.35)" stroke-width="0.8" stroke-dasharray="3,2"/>
+        <text class="lg" x="198" y="572">Interruption</text>
+        <rect x="272" y="564" width="16" height="10" rx="2" fill="rgba(76,242,140,0.14)" stroke="#4cf28c" stroke-width="0.8"/>
+        <text class="lg" x="294" y="572">Pulse unlock rule</text>
+        <rect x="392" y="564" width="16" height="10" rx="2" fill="#111111" stroke="#3d3d3d" stroke-width="0.8"/>
+        <text class="lg" x="414" y="572">Other unlock rule</text>
+        <path d="M512,569 H538" fill="none" stroke="#a8a8a8" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <text class="lg" x="546" y="572">Transition</text>
+        <path d="M612,569 H638" fill="none" stroke="#4cf28c" stroke-width="1.4" marker-end="url(#arrow-accent)"/>
+        <text class="lg" x="646" y="572">Unlock by pulse</text>
+      </svg>
+    </div>
+  </div>
+</body>
+</html>
