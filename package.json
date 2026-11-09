@@ -10,7 +10,8 @@
   },
   "scripts": {
     "build": "node scripts/build.mjs",
-    "dev": "node scripts/build.mjs && electron .",
+    "dev": "node scripts/build.mjs && node scripts/dev-app.mjs",
+    "dev:raw": "node scripts/build.mjs && electron .",
     "start": "electron .",
     "typecheck": "tsc -p tsconfig.node.json --noEmit && tsc -p tsconfig.web.json --noEmit",
     "lint": "eslint .",

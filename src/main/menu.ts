@@ -3,7 +3,7 @@ import { app, Menu, type MenuItemConstructorOptions } from 'electron';
 /**
  * Minimal application menu: App, Edit (text fields need the shortcuts), Window. Reload and
  * DevTools exist only in development builds. On macOS the bold first title comes from the
- * app bundle, so a dev run (stock Electron.app) still shows "Electron" there.
+ * app bundle, which is why `npm run dev` launches a renamed Electron.app (scripts/dev-app.mjs).
  */
 export function installAppMenu(): void {
   const name = app.getName();

@@ -3,7 +3,7 @@
 Steps that need a Presage key, a camera or a person in front of it. Everything else is
 covered by `npm run check` and the scripted smoke runs (see ARCHITECTURE.md, "Verified vs
 planned"). Run from the repo root. If you launch from a Cursor/VS Code terminal, prefix
-Electron commands with `env -u ELECTRON_RUN_AS_NODE`.
+Electron commands other than `npm run dev` with `env -u ELECTRON_RUN_AS_NODE`.
 
 Use a throwaway profile so tests do not touch your real data:
 `ZZ_USER_DATA_DIR=/tmp/zz-manual env -u ELECTRON_RUN_AS_NODE npm run dev`. The diagnostic log then
@@ -26,8 +26,9 @@ goes to `/tmp/zz-manual/logs/main.log` instead of `~/Library/Logs/Zwischenzug/`.
    Pulse diagnostics** in the side panel (or click **Troubleshoot** after a failed check-in).
 2. Check the facts: SDK `loaded (v3.4.0)`, API key present `yes (PRESAGE_API_KEY)`, and
    "Ready: cooldowns unlock by pulse, or by timer if the signal drops".
-3. Click **Start measurement**. macOS asks for camera access the first time. In dev builds
-   the prompt may name Electron or the terminal app you launched from; allow it.
+3. Click **Start measurement**. macOS asks for camera access the first time. `npm run dev`
+   runs a separately signed dev copy named Zwischenzug, so it asks once for itself (the
+   prompt may also name the terminal app you launched from); allow it.
 4. Sit still, face lit from the front, for about 60 s. The label must read
    `Presage session running` and rows must appear under "Latest readings".
 5. Click **Stop**. The camera light must go off within a few seconds.
