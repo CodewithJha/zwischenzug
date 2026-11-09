@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { logToCsv } from '../src/core/export';
 import { freshState, parseEngine, parseLog, parseState } from '../src/core/persisted';
 
 const NOW = 1_800_000_000_000;
@@ -73,7 +74,26 @@ describe('parseEngine (restart persistence)', () => {
 
 describe('parseLog', () => {
   it('filters malformed entries', () => {
-    const log = parseLog({ version: 1, games: [{ gameId: 'a', endedAt: 1 }, { gameId: 3 }, null] });
+    const log = parseLog({
+      version: 1,
+      games: [{ gameId: 'a', endedAt: 1, outcome: 'win' }, { gameId: 3 }, null],
+    });
     expect(log?.games).toHaveLength(1);
+  });
+
+  it('skips entries that would break the game list or CSV export, keeping valid ones', () => {
+    const ok = { gameId: 'ok', endedAt: NOW, outcome: 'loss', userColor: 'white', speed: 'blitz' };
+    const log = parseLog({
+      version: 1,
+      games: [
+        { ...ok, gameId: 'badOutcome', outcome: 42 },
+        { ...ok, gameId: 'farFuture', endedAt: 1e20 },
+        { ...ok, gameId: 'badSpeed', speed: 7 },
+        ok,
+        { ...ok, gameId: 'noSpeed', speed: null },
+      ],
+    });
+    expect(log?.games.map((g) => g.gameId)).toEqual(['ok', 'noSpeed']);
+    expect(() => logToCsv(log?.games ?? [])).not.toThrow();
   });
 });

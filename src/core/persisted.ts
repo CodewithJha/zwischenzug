@@ -93,10 +93,18 @@ export function parseState(raw: unknown, now: number): PersistedState | null {
   return { version: 1, profile: parseProfile(raw.profile), engine: parseEngine(raw.engine, now) };
 }
 
+const MAX_DATE_MS = 8.64e15; // Beyond this, Date is invalid and toISOString throws.
+
+/** Skips entries the panel and CSV export cannot show, instead of failing the whole log. */
+const isLogEntry = (g: unknown): g is GameLogEntry =>
+  isRec(g) &&
+  typeof g.gameId === 'string' &&
+  isNum(g.endedAt) &&
+  Math.abs(g.endedAt) <= MAX_DATE_MS &&
+  (g.outcome === 'win' || g.outcome === 'loss' || g.outcome === 'draw') &&
+  (g.speed === null || g.speed === undefined || typeof g.speed === 'string');
+
 export function parseLog(raw: unknown): PersistedLog | null {
   if (!isRec(raw) || raw.version !== 1 || !Array.isArray(raw.games)) return null;
-  const games = raw.games.filter(
-    (g): g is GameLogEntry => isRec(g) && typeof g.gameId === 'string' && isNum(g.endedAt),
-  );
-  return { version: 1, games };
+  return { version: 1, games: raw.games.filter(isLogEntry) };
 }
