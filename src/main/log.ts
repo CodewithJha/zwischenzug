@@ -10,3 +10,6 @@ log.transports.file.level = 'info';
 log.transports.console.level = process.env.ZZ_LOG_LEVEL === 'debug' ? 'debug' : 'info';
 
 export const logger = log.scope('zz');
+
+/** Folder of the diagnostic log files. */
+export const logDir = (): string => path.dirname(log.transports.file.getFile().path);

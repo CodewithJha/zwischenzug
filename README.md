@@ -172,10 +172,12 @@ Defaults live in [`src/core/config.ts`](src/core/config.ts). Override them with 
   game log (result, baseline, first pulse reading after the loss, time to unlock, unlock reason).
   Pulse values are not written to the diagnostic log file.
 - **Delete**: "Delete all my data" in the side panel removes the game log, baseline, username
-  and consent (not available during an active cooldown, so it cannot be used to skip one).
-  Your Lichess login cookies live in a separate session folder (`Partitions/lichess`); sign out
-  of Lichess or delete that folder to remove them. A saved Presage key is kept; clear it by
-  saving an empty key.
+  and consent, quarantined damaged copies of those files, the saved Presage key, the diagnostic
+  log files and the embedded Lichess session (cookies, storage, cache: you are signed out). It
+  is not available during an active cooldown, so it cannot be used to skip one. Kept: your own
+  `zwischenzug.config.json` (the app never writes it), a fresh empty `state.json` (+ `.bak`),
+  Chromium's cache for the app window (no personal data), and `PRESAGE_API_KEY` if you set it
+  in the environment.
 - **Network**: lichess.org (the site itself, its public API to detect finished games, and
   `/account/info` with the embedded session's cookies to check who is signed in) and
   Presage's key and usage checks. Nothing else.

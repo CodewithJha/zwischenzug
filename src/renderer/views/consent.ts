@@ -7,7 +7,10 @@ const POINTS: [string, string][] = [
     'Network',
     'Presage is contacted to check your API key and usage, never with video. Telemetry is off.',
   ],
-  ['Your data', 'Baseline and game log live in one local file. Delete everything at any time.'],
+  [
+    'Your data',
+    'Baseline and game log stay on this computer. Delete all erases them, the saved key, logs and your Lichess sign-in in the app.',
+  ],
   ['Your call', 'Any cooldown can be skipped by typing a short sentence.'],
 ];
 

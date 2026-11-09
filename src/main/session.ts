@@ -21,6 +21,8 @@ export interface SessionDeps {
   logFile: JsonFile<PersistedLog>;
   presageStatus: () => { sdkLoaded: boolean; sdkError: string | null };
   hasApiKey: () => boolean;
+  /** Delete-all beyond state and log: saved key, damaged copies, logs, Lichess session. */
+  eraseLocalData: () => void;
   now?: () => number;
 }
 
@@ -250,6 +252,7 @@ export class Session {
     if (this.locked) return { ok: false, error: 'Finish or skip the cooldown first.' };
     this.games = [];
     this.deps.logFile.delete();
+    this.deps.eraseLocalData();
     this.state = freshState();
     this.recalibrating = false;
     this.diagnostics = false;

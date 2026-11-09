@@ -1,19 +1,20 @@
-import { app, powerMonitor } from 'electron';
+import { app, powerMonitor, session as electronSession } from 'electron';
 import path from 'node:path';
 import { steadyClock } from '../core/clock';
 import { IPC } from '../shared/ipc';
 import { failClosedState, freshState, parseLog, parseState } from '../core/persisted';
 import { quitAfter } from '../core/quit-guard';
 import { loadConfig } from './config';
+import { eraseLocalFiles } from './erase';
 import { cameraPermission, registerIpc } from './ipc';
 import { watchLichessIdentity } from './lichess/identity';
 import { installRequestLock } from './lichess/lock';
 import { LichessGameSource } from './lichess/source';
-import { createLichessView } from './lichess/view';
-import { logger } from './log';
+import { createLichessView, LICHESS_PARTITION } from './lichess/view';
+import { logDir, logger } from './log';
 import { installAppMenu } from './menu';
 import { initPresage, shutdownPresage, type PresageStatus } from './presage';
-import { presageKeySource } from './secrets';
+import { presageKeySource, savePresageKey } from './secrets';
 import { Session } from './session';
 import { runSmokeIfRequested } from './smoke';
 import { JsonFile } from './store';
@@ -61,6 +62,19 @@ app.whenReady().then(() => {
     })),
     presageStatus: () => ({ sdkLoaded: presage.sdkLoaded, sdkError: presage.sdkError }),
     hasApiKey: () => presageKeySource() !== null,
+    eraseLocalData: () => {
+      savePresageKey('');
+      eraseLocalFiles(dataDir, logDir());
+      const lichess = electronSession.fromPartition(LICHESS_PARTITION);
+      void Promise.all([lichess.clearStorageData(), lichess.clearCache()])
+        .then(() => {
+          view.webContents.reload();
+          identity.recheck();
+        })
+        .catch((err: unknown) =>
+          logger.warn(`clearing the Lichess session failed: ${String(err)}`),
+        );
+    },
   });
   const win = createAppWindow(() => session.cameraAllowed);
   app.on('second-instance', () => {

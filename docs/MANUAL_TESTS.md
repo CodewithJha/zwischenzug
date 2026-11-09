@@ -6,7 +6,8 @@ planned"). Run from the repo root. If you launch from a Cursor/VS Code terminal,
 Electron commands with `env -u ELECTRON_RUN_AS_NODE`.
 
 Use a throwaway profile so tests do not touch your real data:
-`ZZ_USER_DATA_DIR=/tmp/zz-manual env -u ELECTRON_RUN_AS_NODE npm run dev`.
+`ZZ_USER_DATA_DIR=/tmp/zz-manual env -u ELECTRON_RUN_AS_NODE npm run dev`. The diagnostic log then
+goes to `/tmp/zz-manual/logs/main.log` instead of `~/Library/Logs/Zwischenzug/`.
 
 ## 1. Presage key (no camera needed)
 

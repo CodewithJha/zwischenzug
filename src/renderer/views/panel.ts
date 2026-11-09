@@ -113,7 +113,7 @@ export function panelView(): View {
     if (!deleteArmed) {
       deleteArmed = true;
       deleteBtn.classList.add('armed');
-      deleteBtn.textContent = 'Click again to delete log, baseline and consent';
+      deleteBtn.textContent = 'Click again to delete all local data and sign out';
       return;
     }
     const res = await zz().deleteAllData();
