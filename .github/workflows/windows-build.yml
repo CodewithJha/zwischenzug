@@ -1,0 +1,56 @@
+name: Windows build
+
+# Builds the Windows installer on a real Windows runner, checks that the packaged app starts
+# and loads the SmartSpectra SDK, and optionally attaches the installer to a GitHub release.
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release tag to attach the installer to (leave empty to only build)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run dist:win -- --publish never
+
+      - name: Packaged app starts and loads the SDK
+        shell: pwsh
+        run: |
+          $exe = Resolve-Path 'release/win-unpacked/Zwischenzug.exe'
+          $p = Start-Process -FilePath $exe -PassThru
+          Start-Sleep -Seconds 30
+          Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
+          $log = Join-Path $env:APPDATA 'Zwischenzug/logs/main.log'
+          if (-not (Test-Path $log)) { throw "No log at $log: the app did not start" }
+          Get-Content $log | Select-Object -Last 20
+          if (-not (Select-String -Path $log -Pattern 'SmartSpectra SDK .* loaded and bound' -Quiet)) {
+            throw 'The SmartSpectra SDK did not load in the packaged app'
+          }
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: zwischenzug-windows
+          path: release/*-win-x64-setup.exe
+
+      - name: Attach to release
+        if: ${{ inputs.release_tag != '' }}
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload '${{ inputs.release_tag }}' (Get-Item release/*-win-x64-setup.exe).FullName --clobber

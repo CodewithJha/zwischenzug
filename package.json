@@ -33,6 +33,7 @@
     "icon": "electron scripts/make-icon.mjs",
     "dist:mac": "npm run build && electron-builder --mac --arm64",
     "dist:dir": "npm run build && electron-builder --dir",
+    "dist:win": "npm run build && electron-builder --win --x64",
     "app": "npm run dist:dir && open release/mac*/Zwischenzug.app"
   },
   "dependencies": {
@@ -69,6 +70,24 @@
       "!node_modules/@smartspectra/node-sdk/samples/**",
       "!node_modules/@smartspectra/node-sdk/prebuilds/**"
     ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.png",
+      "artifactName": "Zwischenzug-${version}-win-x64-setup.${ext}",
+      "extraResources": [
+        {
+          "from": "node_modules/@smartspectra/node-sdk-win32-x64/",
+          "to": "smartspectra"
+        }
+      ]
+    },
     "mac": {
       "category": "public.app-category.games",
       "icon": "build/icon.icns",
