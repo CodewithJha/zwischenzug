@@ -27,6 +27,7 @@ export interface SessionDeps {
 }
 
 const USERNAME_RE = /^[a-zA-Z0-9_-]{2,30}$/;
+const plausibleBpm = (bpm: number): boolean => Number.isFinite(bpm) && bpm >= 30 && bpm <= 220;
 const normalize = (s: string): string => s.trim().replace(/\s+/g, ' ').toLowerCase();
 
 /** Owns app state: profile, cooldown engine, game log. Single source of truth for the lock. */
@@ -150,7 +151,7 @@ export class Session {
   }
 
   saveBaseline(bpm: number, samples: number): Result {
-    if (!Number.isFinite(bpm) || bpm < 30 || bpm > 220 || !Number.isInteger(samples)) {
+    if (!plausibleBpm(bpm) || !Number.isInteger(samples) || samples < 1) {
       return { ok: false, error: 'Baseline out of range.' };
     }
     this.state.profile.baseline = { bpm: Math.round(bpm * 10) / 10, at: this.now(), samples };
@@ -220,7 +221,8 @@ export class Session {
   }
 
   pulse(bpm: number, stable: boolean): void {
-    if (!this.locked || !this.cameraAllowed) return;
+    // An implausible reading counts as no reading, so it can neither settle nor extend the lock.
+    if (!this.locked || !this.cameraAllowed || !plausibleBpm(bpm)) return;
     this.apply({ type: 'PULSE', bpm, stable, at: this.now() });
   }
 
