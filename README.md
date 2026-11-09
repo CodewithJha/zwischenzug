@@ -162,7 +162,44 @@ Electron 43 · TypeScript (strict) · esbuild · Vitest · ESLint + Prettier · 
 Node SDK 3.4 · Lichess API · electron-builder · electron-log. No UI framework; plain HTML/CSS
 with design tokens and self-hosted OFL fonts.
 
+## Download
+
+A prebuilt app for **macOS on Apple Silicon** is attached to the
+[latest release](https://github.com/CodewithJha/zwischenzug/releases/latest)
+(`Zwischenzug-<version>-arm64.dmg`).
+
+1. Open the DMG and drag **Zwischenzug** to **Applications**.
+2. The app is not notarized (no Apple Developer ID), so macOS blocks the first launch. Either
+   open **System Settings › Privacy & Security** and click **Open Anyway** next to the
+   Zwischenzug message, or run:
+   ```bash
+   xattr -dr com.apple.quarantine /Applications/Zwischenzug.app
+   ```
+3. Launch it, choose **Allow camera between games**, enter your Lichess username, paste your
+   Presage API key on the check-in screen, and allow camera access when macOS asks.
+
+## How judges can test
+
+You need a free [Lichess account](https://lichess.org/signup) and, for the pulse path, a free
+[Presage API key](https://physiology.presagetech.com/auth/register). There are no shared test
+credentials: the key is tied to a personal free trial, and Lichess sign-in happens inside the
+app on lichess.org itself.
+
+- **See the live Presage signal in about a minute (no game needed):** choose "Allow camera
+  between games", enter your Lichess username, paste the key and click **Start check-in**: the
+  one-minute check-in measures your pulse live and saves your baseline. Afterwards,
+  **Settings › Advanced › Pulse diagnostics** in the side panel shows raw live readings, the
+  SDK's status and hints, and the reading rate.
+- **Full loop:** sign in to Lichess in the left pane as the same username, start a casual game
+  and resign. New games lock and the cooldown screen shows your
+  live pulse against your baseline. It unlocks by pulse after at least 60 s; cover the camera to
+  see the timer fallback; or use **Skip cooldown** and type the sentence.
+- **Without a key:** choose **Timer only**. Every cooldown then unlocks by timer (180 s).
+- Good front lighting on your face gives the most stable readings.
+
 ## Install and setup
+
+To build from source instead of using the DMG:
 
 **Requirements:** macOS on Apple Silicon (the only platform tested), Node.js >= 22.12, a webcam,
 a Lichess account and, for the pulse path, a [Presage API key](https://physiology.presagetech.com).
@@ -195,12 +232,12 @@ do the one-minute check-in, then sign in to Lichess in the left pane and play.
 
 ### Signing and Gatekeeper
 
-There is no signed or notarized release. `npm run app` and `npm run dist:dir` produce an
-ad hoc signed app for your own machine. The packaged app has Electron fuses hardened
-(no `ELECTRON_RUN_AS_NODE`, no `NODE_OPTIONS`, no `--inspect`, asar integrity on) and is
-configured for the hardened runtime, which applies once it is signed with a Developer ID. If you
-copy the app to another Mac, Gatekeeper will block it: right-click > **Open**, or run
-`xattr -dr com.apple.quarantine Zwischenzug.app`.
+The released DMG and local builds (`npm run app`, `npm run dist:dir`, `npm run dist:mac` with
+`CSC_IDENTITY_AUTO_DISCOVERY=false`) are **ad hoc signed, not Developer ID signed and not
+notarized**. The packaged app has Electron fuses hardened (no `ELECTRON_RUN_AS_NODE`, no
+`NODE_OPTIONS`, no `--inspect`, asar integrity on) and is configured for the hardened runtime,
+which applies once it is signed with a Developer ID. A downloaded copy is blocked by Gatekeeper
+until you allow it (see [Download](#download)).
 
 ## Development
 
@@ -266,7 +303,14 @@ packaged app with a real camera, and the camera-permission-denied path. Steps ar
   only). Lichess gets no device permissions.
 - **On-device processing.** The SmartSpectra SDK estimates pulse on this computer. No video or
   frames are uploaded or saved. Presage's servers are contacted to validate the API key and
-  record usage (device pairing and usage verification), never with video. SDK telemetry is off.
+  record usage (device pairing and usage verification), never with video.
+- **SDK telemetry is off** (`enableTelemetry: false`). Per Presage's
+  [Telemetry & Privacy](https://smartspectra.presagetech.com/docs/telemetry-and-privacy) doc, the
+  SDK then starts no telemetry session and transmits nothing; when on, it would send only an
+  aggregate session summary with no video, no metric values and no identifiers.
+- **No AI services.** The app sends nothing to any AI or analytics service. (AI coding assistants
+  helped write the code; they are not part of the app.)
+- **No sharing.** Nothing is uploaded to or shared with anyone, including the developer.
 - **Stored locally** (`~/Library/Application Support/Zwischenzug/`): consent choice, Lichess
   username, baseline pulse, and a game log (result, losses in a row, baseline, first pulse after
   the loss, time to unlock, unlock reason). Pulse readings are not written to the log files.
@@ -278,6 +322,9 @@ packaged app with a real camera, and the camera-permission-denied path. Steps ar
   the embedded Lichess session (you are signed out). It is unavailable during an active cooldown.
   It keeps your own `zwischenzug.config.json`, a fresh empty state file, Chromium's cache for the
   app window (no personal data) and `PRESAGE_API_KEY` if set in the environment.
+- **Retention.** The local data is kept until you use **Delete all my data** or delete the app
+  data folder; nothing expires on its own. Diagnostic logs (`~/Library/Logs/Zwischenzug/`) hold
+  app events such as game ids and outcomes, never pulse values or keys, and rotate at 1 MB.
 - **Export** (CSV or JSON) happens only when you ask, to a file you choose.
 
 ## Limitations
