@@ -19,6 +19,9 @@ const RESERVED_PATHS = new Set([
   'tutorial',
   'calendar',
   'insights',
+  'features',
+  'timeline',
+  'download',
 ]);
 
 /**

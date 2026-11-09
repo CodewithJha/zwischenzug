@@ -137,12 +137,17 @@ sequenceDiagram
 
 1. `GET /api/user/{username}/current-game` every 10 s returns the ongoing game, or the last
    game played. Ongoing games are delayed by three moves for anti-cheat.
-2. For an ongoing game (from the poll, or from the embedded page's URL), hold
-   `GET /api/stream/game/{id}` open. The last line is the finished game with
-   `status: {id, name}` and `winner`, then the stream closes. Polling pauses while it is open.
-3. If a stream closes without a result, ask `GET /game/export/{id}` (with retries) for that
-   exact game, because `current-game` may already show the user's next game.
-4. On HTTP 429, wait 60 s, as Lichess documents. Network errors back off and set the status.
+2. For a game seen in progress (from the poll, or from one `GET /game/export/{id}` when the
+   embedded page opens a game URL), hold `GET /api/stream/game/{id}` open. The last line is
+   the finished game with `status: {id, name}` and `winner`, then the stream closes. Polling
+   continues while streams are open (they may belong to correspondence games).
+3. If a stream closes without a result, or both stream slots are taken, check
+   `GET /game/export/{id}` for that exact game (backing off to once a minute) until it ends,
+   because `current-game` may already show the user's next game.
+4. Only games seen in progress count, plus `current-game`'s last game if it ended within
+   10 minutes (an app restart right after a loss). A stream replays an old game from a
+   first line without a status, so opening a past game in the view never counts.
+5. On HTTP 429, wait 60 s, as Lichess documents. Network errors back off and set the status.
 
 Rejected: `POST /api/stream/games-by-users` only streams games where **both** players are in
 the list. `GET /api/stream/event` needs an OAuth token; it is the upgrade path if the

@@ -25,6 +25,7 @@ describe('gameIdFromUrl', () => {
     ['https://lichess.org/', null],
     ['https://lichess.org/analysis', null],
     ['https://lichess.org/training', null],
+    ['https://lichess.org/features', null],
     ['https://lichess.org/@/DrNykterstein', null],
     ['https://lichess.org/tournament/8lVvEuuX', null],
     ['https://example.com/HqjDTU4A', null],
