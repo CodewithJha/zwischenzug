@@ -86,7 +86,11 @@ The logged-out case is verified by a smoke run. The signed-in cases need your ac
    shuts down; it must exit cleanly (no "quit unexpectedly" dialog, no `FATAL ERROR` in the
    terminal).
 5. Lose again and close the laptop lid for 2 minutes: after waking, the time asleep counts.
-6. **Export CSV** in the panel and open the file.
+6. Pulse recovery: lose again, look away from the camera until the status says "No face in
+   view … Trying again shortly", then face the camera. Within about 15 s the camera comes back
+   and "Your pulse now" fills in again; it unlocks by pulse, not by the timer.
+7. From your Lichess profile, open an old game you lost: no cooldown, no new log row.
+8. **Export CSV** in the panel and open the file.
 
 ## What to report back
 
