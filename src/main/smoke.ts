@@ -29,13 +29,16 @@ export function runSmokeIfRequested(win: BrowserWindow, view: WebContentsView): 
 
   const capture = async (name: string): Promise<void> => {
     await wait(1500);
-    writeFileSync(path.join(dir, `${name}-app.png`), (await win.webContents.capturePage()).toPNG());
-    if (view.getVisible()) {
-      writeFileSync(
-        path.join(dir, `${name}-lichess.png`),
-        (await view.webContents.capturePage()).toPNG(),
-      );
-    }
+    // Screenshots can fail (e.g. display asleep); the textual report still matters.
+    const png = async (wc: Electron.WebContents, file: string): Promise<void> => {
+      try {
+        writeFileSync(path.join(dir, file), (await wc.capturePage()).toPNG());
+      } catch (err) {
+        report.push({ step: `${name}:capture-error`, error: String(err) });
+      }
+    };
+    await png(win.webContents, `${name}-app.png`);
+    if (view.getVisible()) await png(view.webContents, `${name}-lichess.png`);
     report.push({
       step: name,
       screen: await win.webContents.executeJavaScript('document.body.dataset.screen'),
