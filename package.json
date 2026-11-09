@@ -76,7 +76,16 @@
         }
       ]
     },
-    "asar": true
+    "asar": true,
+    "electronFuses": {
+      "runAsNode": false,
+      "enableNodeOptionsEnvironmentVariable": false,
+      "enableNodeCliInspectArguments": false,
+      "enableCookieEncryption": true,
+      "onlyLoadAppFromAsar": true,
+      "enableEmbeddedAsarIntegrityValidation": true,
+      "resetAdHocDarwinSignature": true
+    }
   },
   "allowScripts": {
     "electron@43.2.0": true,

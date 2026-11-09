@@ -7,7 +7,8 @@ import { logger } from './log';
 /**
  * Config sources, lowest to highest precedence: built-in defaults, the optional
  * `<userData>/zwischenzug.config.json`, then environment variables (a `.env` in the
- * working directory is loaded in development only).
+ * working directory is loaded in development only; packaged builds ignore the timing
+ * and threshold variables).
  */
 export function loadConfig(): Config {
   if (!app.isPackaged && existsSync('.env')) process.loadEnvFile('.env');
@@ -21,7 +22,7 @@ export function loadConfig(): Config {
       logger.warn(`ignoring unreadable config file: ${String(err)}`);
     }
   }
-  const { config, warnings } = resolveConfig(fileJson, process.env);
+  const { config, warnings } = resolveConfig(fileJson, process.env, { packaged: app.isPackaged });
   for (const w of warnings) logger.warn(`config: ${w}`);
   return config;
 }

@@ -94,7 +94,11 @@ function coerce(defaultValue: unknown, raw: unknown): unknown {
  * Merges defaults <- config file <- env. Unknown keys and invalid values are ignored
  * (and reported) rather than crashing the app.
  */
-export function resolveConfig(file: unknown, env: Env): { config: Config; warnings: string[] } {
+export function resolveConfig(
+  file: unknown,
+  env: Env,
+  options: { packaged?: boolean } = {},
+): { config: Config; warnings: string[] } {
   const warnings: string[] = [];
   const config = structuredClone(DEFAULT_CONFIG) as unknown as Record<
     string,
@@ -118,7 +122,10 @@ export function resolveConfig(file: unknown, env: Env): { config: Config; warnin
     }
   }
   for (const [name, [section, key]] of Object.entries(ENV_KEYS)) {
-    if (env[name] !== undefined) apply(section, key, env[name], name);
+    if (env[name] === undefined) continue;
+    // Timing and threshold tunables are for development; a packaged app keeps its rules.
+    if (options.packaged && section !== 'presage') warnings.push(`${name}: ignored when packaged`);
+    else apply(section, key, env[name], name);
   }
 
   const result = config as unknown as Config;

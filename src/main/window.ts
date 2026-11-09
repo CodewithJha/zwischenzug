@@ -1,4 +1,4 @@
-import { BrowserWindow, session } from 'electron';
+import { app, BrowserWindow, session } from 'electron';
 import path from 'node:path';
 import { logger } from './log';
 
@@ -45,6 +45,7 @@ export function createAppWindow(canUseCamera: () => boolean): BrowserWindow {
   win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   win.webContents.on('will-navigate', (event) => event.preventDefault());
   void win.loadFile(RENDERER_HTML);
-  if (process.env.ZZ_DEVTOOLS === '1') win.webContents.openDevTools({ mode: 'detach' });
+  if (process.env.ZZ_DEVTOOLS === '1' && !app.isPackaged)
+    win.webContents.openDevTools({ mode: 'detach' });
   return win;
 }

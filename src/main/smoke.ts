@@ -7,11 +7,11 @@ import { logger } from './log';
  * Verification aid. `ZZ_SMOKE_DIR=/tmp/zz npm start` waits for both surfaces to load, then
  * runs the optional `ZZ_SMOKE_STEPS` (JSON array of {name, js} evaluated in the app page),
  * capturing PNGs and a JSON report after each step, then quits.
- * Never active unless the env var is set.
+ * Never active unless the env var is set, and never in packaged builds.
  */
 export function runSmokeIfRequested(win: BrowserWindow, view: WebContentsView): void {
   const dir = process.env.ZZ_SMOKE_DIR;
-  if (!dir) return;
+  if (!dir || app.isPackaged) return;
   mkdirSync(dir, { recursive: true });
   // Scripted runs must not be steered by (or steal) the real mouse.
   win.setIgnoreMouseEvents(true);

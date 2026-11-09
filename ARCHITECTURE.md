@@ -251,6 +251,7 @@ app page, and only in camera mode. The Lichess view cannot reach `window.zz` or 
 | Camera             | Permission handler grants `media` only if video-only, from our `file://` page, and after camera-mode consent. Main also gates `requestCamera` and the API key on consent                                                    |
 | Credentials        | `PRESAGE_API_KEY` env or safeStorage-encrypted file; `.env` loaded only in dev and ignored by git                                                                                                                           |
 | Persistence        | Atomic, fsynced writes (temp + rename), mode 0600; `state.json` mirrored to `state.json.bak`; corrupt files quarantined and restored from the backup; with no valid copy (or a damaged cooldown) it restores as locked      |
+| Packaged build     | Electron fuses: RunAsNode, `NODE_OPTIONS` and `--inspect` off; cookie encryption, asar-only loading and asar integrity validation on. `ZZ_DEVTOOLS`, `ZZ_SMOKE_*` and the timing/threshold env tunables are ignored         |
 | Logging            | electron-log to the OS log folder; no pulse values or keys are logged                                                                                                                                                       |
 
 ## Persistence and restart

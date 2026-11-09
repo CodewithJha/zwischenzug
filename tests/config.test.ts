@@ -45,6 +45,14 @@ describe('resolveConfig', () => {
     expect(resolveConfig({}, { ZZ_LICHESS_POLL_SEC: '1' }).config.lichess.pollIntervalSec).toBe(3);
   });
 
+  it('packaged builds ignore timing and threshold env tunables', () => {
+    const env = { ZZ_MAX_COOLDOWN_SEC: '0', ZZ_MIN_WAIT_SEC: '1', ZZ_LICHESS_POLL_SEC: '60' };
+    const { config, warnings } = resolveConfig(undefined, env, { packaged: true });
+    expect(config).toEqual(DEFAULT_CONFIG);
+    expect(warnings).toHaveLength(3);
+    expect(resolveConfig(undefined, env).config.cooldown.minWaitSec).toBe(1);
+  });
+
   it('does not mutate the defaults', () => {
     resolveConfig({ cooldown: { minWaitSec: 999 } }, {});
     expect(DEFAULT_CONFIG.cooldown.minWaitSec).toBe(60);
