@@ -162,9 +162,36 @@ describe('timer fallback', () => {
     expect(state.phase).toBe('cooldown');
   });
 
-  it('uses the timer once an elevated signal goes stale past the fallback time', () => {
-    const { unlocks } = run([loss(), ...pulses(170, 200, 95), tick(206)]);
+  it('uses the timer once an elevated signal has been gone for the fallback time', () => {
+    expect(run([loss(), ...pulses(170, 200, 95), tick(206)]).state.phase).toBe('cooldown');
+    expect(run([loss(), ...pulses(170, 200, 95), tick(379)]).state.phase).toBe('cooldown');
+    const { unlocks } = run([loss(), ...pulses(170, 200, 95), tick(380)]);
     expect(unlocks[0]?.reason).toBe('timer');
+  });
+
+  it('elevated pulse with intermittent gaps does not unlock early via a gap', () => {
+    // 20 s of readings, then a 10 s gap (TICKs only), repeated.
+    const events: EngineEvent[] = [loss()];
+    for (let t = 0; t < 900; t += 30) {
+      events.push(...pulses(t + 1, t + 20, 100));
+      for (let g = t + 21; g <= t + 30; g++) events.push(tick(g));
+    }
+    const { unlocks } = run(events);
+    expect(unlocks[0]?.at).toBe(sec(900)); // only the hard maximum
+  });
+
+  it('after a signal gap, returning readings bring the pulse rule back', () => {
+    const gap = Array.from({ length: 70 }, (_, i) => tick(171 + i)); // 171..240 s
+    const elevated = run([loss(), ...pulses(100, 170, 100), ...gap, ...pulses(241, 300, 100)]);
+    expect(elevated.state.phase).toBe('cooldown');
+    const settled = run([loss(), ...pulses(100, 170, 100), ...gap, ...pulses(241, 300, 72)]);
+    expect(settled.unlocks[0]).toMatchObject({ reason: 'biometric', at: sec(256) });
+  });
+
+  it('the countdown shows when the timer would actually unlock', () => {
+    const { state } = run([loss(), ...pulses(170, 200, 95), tick(210)]);
+    if (state.phase !== 'cooldown') throw new Error('expected a cooldown');
+    expect(cooldownView(state.cooldown, sec(210), rules).fallbackRemainingSec).toBe(170);
   });
 
   it('never holds longer than the hard maximum', () => {
@@ -218,7 +245,8 @@ describe('unlockReason and cooldownView', () => {
       signalFresh: true,
       settledForSec: 10,
       minWaitRemainingSec: 0,
-      fallbackRemainingSec: 80,
+      fallbackRemainingSec: 180, // counted from the last valid reading
+
       maxRemainingSec: 800,
     });
     expect(cooldownView(base, sec(110), rules)).toMatchObject({ lastBpm: null, settledForSec: 0 });

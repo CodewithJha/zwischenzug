@@ -76,11 +76,13 @@ export class PresageProvider implements BiometricProvider {
       if (current()) handlers.trace?.(m);
     };
     let failed = false;
-    const unavailable = (reason: string): void => {
+    const unavailable = (reason: string, retryable = false): void => {
       if (!current() || failed) return;
       failed = true;
       trace(`unavailable: ${reason}`);
-      handlers.state({ kind: 'unavailable', reason });
+      handlers.state(
+        retryable ? { kind: 'unavailable', reason, retryable } : { kind: 'unavailable', reason },
+      );
       // Nothing more will be measured, so release the camera.
       void this.stop();
     };
@@ -150,7 +152,15 @@ export class PresageProvider implements BiometricProvider {
     sdk.on('error', (code, message, retryable) => {
       zz().log('warn', `SmartSpectra error ${code} (retryable=${retryable}): ${message}`);
       trace(`error ${nameOf(SmartSpectraErrorCode, code)} (retryable=${retryable}): ${message}`);
-      unavailable(ERRORS[code] ?? `Presage SDK error (${nameOf(SmartSpectraErrorCode, code)}).`);
+      // The SDK's watchdog fires the same code when no face was ever usable.
+      const noFace =
+        code === SmartSpectraErrorCode.kProcessingFailed && lastValidation !== -1 && !validationOk;
+      unavailable(
+        noFace
+          ? `${HINTS[lastValidation] ?? 'No face in view.'} No pulse reading yet.`
+          : (ERRORS[code] ?? `Presage SDK error (${nameOf(SmartSpectraErrorCode, code)}).`),
+        retryable === true,
+      );
     });
     sdk.on('streamAvailable', (stream) => {
       if (current()) handlers.stream?.(stream);

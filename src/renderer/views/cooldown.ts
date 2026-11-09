@@ -14,6 +14,9 @@ const STATUS_TITLE = {
 const LABEL_MIN_GAP = 18;
 /** Past this position a label is right-aligned so it stays inside the gauge. */
 const LABEL_END_AT = 85;
+/** Restarts of the pulse measurement after a retryable failure, per cooldown. */
+const MAX_RESTARTS = 5;
+const RESTART_DELAY_MS = 15_000;
 
 /** Horizontal scale: your band (up to baseline + tolerance), baseline, pulse at loss, now. */
 function pulseGauge(): { el: HTMLElement; update(c: CooldownView): void } {
@@ -244,12 +247,22 @@ export function cooldownView(provider: BiometricProvider | null): View {
     );
   };
 
-  if (provider) {
-    void provider.start({
+  let restarts = 0;
+  let restartTimer: ReturnType<typeof setTimeout> | undefined;
+  const startProvider = (p: BiometricProvider): void => {
+    void p.start({
       reading: (r) => zz().reportPulse(r.bpm, r.stable),
       state: (st) => {
         providerState = st;
-        if (st.kind === 'unavailable') camera.video.srcObject = null;
+        if (st.kind === 'unavailable') {
+          camera.video.srcObject = null;
+          // E.g. no face right after the loss: measure again when the player is back.
+          if (st.retryable && restarts < MAX_RESTARTS) {
+            restarts++;
+            providerState = { ...st, reason: `${st.reason} Trying again shortly.` };
+            restartTimer = setTimeout(() => startProvider(p), RESTART_DELAY_MS);
+          }
+        }
         render();
       },
       stream: (stream) => {
@@ -257,7 +270,8 @@ export function cooldownView(provider: BiometricProvider | null): View {
         void camera.video.play().catch(() => undefined);
       },
     });
-  }
+  };
+  if (provider) startProvider(provider);
 
   return {
     el,
@@ -266,6 +280,7 @@ export function cooldownView(provider: BiometricProvider | null): View {
       render();
     },
     destroy: () => {
+      clearTimeout(restartTimer);
       camera.video.srcObject = null;
       if (provider) void provider.stop();
     },

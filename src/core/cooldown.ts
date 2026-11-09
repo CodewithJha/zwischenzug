@@ -73,8 +73,18 @@ export function signalFresh(c: Cooldown, now: number, rules: CooldownRules): boo
 }
 
 /**
+ * When the timer fallback unlocks: `fallbackMs` without a valid reading, counted from the
+ * loss or from the last valid reading, so a brief signal gap is not a way around the pulse.
+ * Without a baseline, readings cannot unlock, so they do not postpone the timer either.
+ */
+function fallbackAt(c: Cooldown, rules: CooldownRules): number {
+  const lastUsable = c.baselineBpm === null ? null : c.lastValidAt;
+  return Math.max(c.startedAt, lastUsable ?? c.startedAt) + rules.fallbackMs;
+}
+
+/**
  * The unlock rule. Biometric: settled (with a fresh signal) for `sustainMs` and past the
- * minimum wait. Timer: no usable signal and past the fallback time, or past the hard maximum.
+ * minimum wait. Timer: no valid reading for the fallback time, or past the hard maximum.
  */
 export function unlockReason(c: Cooldown, now: number, rules: CooldownRules): UnlockReason | null {
   const elapsed = now - c.startedAt;
@@ -83,7 +93,7 @@ export function unlockReason(c: Cooldown, now: number, rules: CooldownRules): Un
   if (c.baselineBpm !== null && fresh && c.settledSince !== null) {
     if (now - c.settledSince >= rules.sustainMs) return 'biometric';
   }
-  if (!fresh && elapsed >= rules.fallbackMs) return 'timer';
+  if (!fresh && now >= fallbackAt(c, rules)) return 'timer';
   if (elapsed >= rules.maxMs) return 'timer';
   return null;
 }
@@ -106,7 +116,7 @@ export function cooldownView(c: Cooldown, now: number, rules: CooldownRules): Co
     minWaitSec: rules.minWaitMs / 1000,
     minWaitRemainingSec: secs(rules.minWaitMs - elapsed),
     fallbackSec: rules.fallbackMs / 1000,
-    fallbackRemainingSec: secs(rules.fallbackMs - elapsed),
+    fallbackRemainingSec: secs(Math.min(fallbackAt(c, rules) - now, rules.maxMs - elapsed)),
     maxRemainingSec: secs(rules.maxMs - elapsed),
     suggestedPauseUntil: c.suggestedPauseUntil,
   };

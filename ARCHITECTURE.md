@@ -221,6 +221,10 @@ timestamp}`; `stable` means confidence >= 40 (about +/-3 bpm, per the SDK's prot
   the SDK's 30 s startup watchdog `kProcessingFailed`, ...), getUserMedia failures, a missing
   key, a camera denial or a failed native load all become `unavailable(reason)`. The provider
   then stops the SDK (camera off), the UI says so and the engine's timer fallback applies.
+  Retryable failures (e.g. the watchdog when no face was in view, reported as "No face in
+  view") restart the measurement up to 5 times per cooldown, 15 s apart. The timer fallback
+  needs `fallbackSec` without a valid reading, counted from the loss or the last reading, so
+  a short gap never unlocks while the pulse is elevated.
 - Observed with a bogus key (main-process SDK, blank frames): `start()` blocks about 2-5 s,
   then `error` code 2 `kAuthenticationFailed` (retryable=false) and status `kError`.
 - The SDK's preload bridge is a single shared MessagePort. `PresageProvider` chains

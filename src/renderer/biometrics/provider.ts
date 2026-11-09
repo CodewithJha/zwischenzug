@@ -11,8 +11,11 @@ export interface PulseReading {
 export type ProviderState =
   | { kind: 'starting' }
   | { kind: 'measuring'; ok: boolean; hint: string | null }
-  /** No usable signal source: callers fall back to the timer. The camera is released. */
-  | { kind: 'unavailable'; reason: string };
+  /**
+   * No usable signal source: callers fall back to the timer. The camera is released.
+   * `retryable`: a new start() may work (e.g. the face was out of view).
+   */
+  | { kind: 'unavailable'; reason: string; retryable?: true };
 
 export interface ProviderHandlers {
   reading(r: PulseReading): void;

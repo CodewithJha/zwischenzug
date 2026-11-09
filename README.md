@@ -147,18 +147,18 @@ Defaults live in [`src/core/config.ts`](src/core/config.ts). Override them with 
 (macOS: `~/Library/Application Support/zwischenzug/`), or with environment variables (see
 [.env.example](.env.example)). Environment wins over the file.
 
-| Setting                                              | Default                                       | Meaning                                          |
-| ---------------------------------------------------- | --------------------------------------------- | ------------------------------------------------ |
-| `cooldown.minWaitSec`                                | 60                                            | No unlock before this, however calm              |
-| `cooldown.toleranceBpm` / `tolerancePct`             | 5 / 7                                         | Settled = pulse <= baseline + max(5 bpm, 7%)     |
-| `cooldown.sustainSec`                                | 15                                            | Settled for this long, with a fresh signal       |
-| `cooldown.fallbackSec`                               | 180                                           | Timer unlock when there is no usable signal      |
-| `cooldown.maxSec`                                    | 900                                           | Hard ceiling, never locked longer                |
-| `cooldown.escalateAfterLosses` / `suggestedPauseMin` | 5 / 30                                        | Suggest a longer break                           |
-| `cooldown.overrideSentence`                          | "I choose to skip this cooldown and play now" | Typed to skip                                    |
-| `calibration.durationSec` / `minSamples`             | 60 / 10                                       | Check-in length, minimum stable readings         |
-| `lichess.pollIntervalSec`                            | 10                                            | Backup polling interval (min 3)                  |
-| `presage.enableTelemetry`                            | false                                         | SDK aggregate telemetry (upstream default is on) |
+| Setting                                              | Default                                       | Meaning                                                                                  |
+| ---------------------------------------------------- | --------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `cooldown.minWaitSec`                                | 60                                            | No unlock before this, however calm                                                      |
+| `cooldown.toleranceBpm` / `tolerancePct`             | 5 / 7                                         | Settled = pulse <= baseline + max(5 bpm, 7%)                                             |
+| `cooldown.sustainSec`                                | 15                                            | Settled for this long, with a fresh signal                                               |
+| `cooldown.fallbackSec`                               | 180                                           | Timer unlock after this long without a valid reading (from the loss or the last reading) |
+| `cooldown.maxSec`                                    | 900                                           | Hard ceiling, never locked longer                                                        |
+| `cooldown.escalateAfterLosses` / `suggestedPauseMin` | 5 / 30                                        | Suggest a longer break                                                                   |
+| `cooldown.overrideSentence`                          | "I choose to skip this cooldown and play now" | Typed to skip                                                                            |
+| `calibration.durationSec` / `minSamples`             | 60 / 10                                       | Check-in length, minimum stable readings                                                 |
+| `lichess.pollIntervalSec`                            | 10                                            | Backup polling interval (min 3)                                                          |
+| `presage.enableTelemetry`                            | false                                         | SDK aggregate telemetry (upstream default is on)                                         |
 
 ## Privacy summary
 

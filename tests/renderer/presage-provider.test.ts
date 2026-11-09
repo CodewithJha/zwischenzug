@@ -37,7 +37,7 @@ vi.mock('@smartspectra/node-sdk/renderer', () => {
     MetricType: { PULSE_RATE: 15 },
     ProcessingStatus: { kRunning: 3 },
     ValidationCode: { kOk: 0, kNoFaceFound: 1 },
-    SmartSpectraErrorCode: { kAuthenticationFailed: 2 },
+    SmartSpectraErrorCode: { kAuthenticationFailed: 2, kProcessingFailed: 8 },
   };
 });
 vi.mock('@smartspectra/node-sdk/messages', () => ({ decodeMetrics: () => ({}) }));
@@ -92,5 +92,18 @@ describe('PresageProvider', () => {
     expect(calls).toContain('stop 1');
     fakes[0]?.emit('validationStatus', 0, 0, '');
     expect(states.at(-1)?.kind).toBe('unavailable');
+  });
+
+  it('a processing failure with no face in view says so and is retryable', async () => {
+    const provider = new PresageProvider(() => snapshot as never);
+    const states: ProviderState[] = [];
+    await provider.start(handlers(states));
+    fakes[0]?.emit('validationStatus', 1, 0, '');
+    fakes[0]?.emit('error', 8, 'watchdog', true);
+    await flush();
+    const last = states.at(-1);
+    expect(last).toMatchObject({ kind: 'unavailable', retryable: true });
+    expect(last?.kind === 'unavailable' && last.reason).toMatch(/no face/i);
+    expect(last?.kind === 'unavailable' && last.reason).not.toMatch(/could not start/i);
   });
 });
